@@ -33,7 +33,7 @@ def find_levels(data, target_values, current_path=None, results=None):
     return results
 
 @app.route('/', methods=['POST'])
-def process_data():
+def index():
     # Parse JSON from the request
     req_data = request.get_json()
 
