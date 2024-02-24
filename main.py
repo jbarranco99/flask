@@ -34,7 +34,7 @@ def find_levels(data, target_values, current_path=None, results=None):
     return results
 
 @app.route('/', methods=['POST'])
-def index():
+def process_data():
     # Parse JSON from the request
     req_data = request.get_json()
 
@@ -88,4 +88,4 @@ def index():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, port=os.getenv("PORT", default=5000))
+    app.run(debug=True, port=int(os.getenv("PORT", 5000)))
