@@ -38,7 +38,7 @@ def index():
     return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
 
 
-@app.route('/test', methods=['GET','POST'])
+@app.route('/test', methods=['POST'])
 def process_data():
     # Parse JSON from the request
     req_data = request.get_json()
