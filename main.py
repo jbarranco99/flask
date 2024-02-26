@@ -85,7 +85,6 @@ def process_data():
         "Pending Cat 1 Elements": pendingcat1,
         "Pending_categories": pending_categories,
         "Selection Paths": selection_paths
-        "gameStage": gameStage
     })
 
 if __name__ == '__main__':
