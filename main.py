@@ -10,7 +10,7 @@ def index():
 
 @app.route('/test', methods=['POST'])
 def process_data():
-
+    req_data = request.json
     gameStage = req_data['gameStage']
 
 
