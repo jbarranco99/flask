@@ -33,7 +33,12 @@ def find_levels(data, target_values, current_path=None, results=None):
             find_levels(item, target_values, current_path + [str(index)], results)
     return results
 
-@app.route('/', methods=['POST'])
+@app.route('/')
+def index():
+    return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
+
+
+@app.route('/test', methods=['POST'])
 def process_data():
     # Parse JSON from the request
     req_data = request.get_json()
