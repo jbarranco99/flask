@@ -40,56 +40,13 @@ def index():
 
 @app.route('/test', methods=['POST'])
 def process_data():
-    # Parse JSON from the request
-    req_data = request.get_json()
 
-    data = req_data['data']
     gameStage = req_data['gameStage']
-    pickedCats = req_data['pickedCats']
-    pendingcat1 = req_data['pendingcat1']
-    pendingCategories = req_data['pendingCategories']
-    userInput = req_data['userInput']
-    selection_paths = req_data['selection_paths']
-    answers = []
 
-    if pendingcat1 == []:
-        pendingcat1 = [cat for cat in pickedCats if cat in data['names']]
 
-    if len(pendingcat1) >= len(pendingCategories):
-        answers = get_value(data, ['subcategories', pendingcat1[0], 'names'])
-        pendingcat1.pop(0)
-        pendingCategories.extend(answers)
-    else:
-        results = find_levels(data, userInput)
-        filtered_results = [result for result in results if result[0] == 'Key']
-
-        for result in filtered_results:
-            _, value, path = result
-            full_path = path + [value, 'names']
-            current_answers = get_value(data, full_path)
-            if current_answers is not None:
-                if isinstance(current_answers, list):
-                    answers.extend(current_answers)
-                else:
-                    answers.append(current_answers)
-                # Update selection_paths with the current path
-                selection_paths.append(full_path[:-1])  # Exclude 'names' from the path
-
-    # Combine allowed values: pendingcat1, user_input, and answers
-    allowed_values = set(pendingcat1 + answers)
-
-    # Update pending_categories to include only allowed values, and add new answers to the start
-    pending_categories = [item for item in answers + pendingcat1]
-
-    if len(pendingcat1) == len(pending_categories):
-        gameStage = "dishPicker"
 
     return jsonify({
-        "gameStage": gameStage,
-        "All Answers": answers,
-        "Pending Cat 1 Elements": pendingcat1,
-        "Pending_categories": pending_categories,
-        "Selection Paths": selection_paths
+        "gameStage": gameStage
     })
 
 if __name__ == '__main__':
