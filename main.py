@@ -81,10 +81,10 @@ def process_data():
 
     return jsonify({
         "gameStage": gameStage,
-        "All Answers": answers,
-        "Pending Cat 1 Elements": pendingcat1,
-        "Pending_categories": pending_categories,
-        "Selection Paths": selection_paths
+        "answers": answers,
+        "pendingcat1": pendingcat1,
+        "pending_categories": pending_categories,
+        "selection_paths": selection_paths
     })
 
 if __name__ == '__main__':
