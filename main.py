@@ -68,7 +68,11 @@ def process_data():
                 else:
                     answers.append(current_answers)
                 # Update selection_paths with the current path
-                selection_paths.append(full_path[:-1])  # Exclude 'names' from the path
+                latest_path = path
+
+                # Reset selection_paths to only include the latest_path, ensuring it's not duplicated
+        if latest_path is not None:
+            selection_paths = [latest_path]  # Here we set selection_paths to only contain the latest path
 
     # Combine allowed values: pendingcat1, user_input, and answers
     allowed_values = set(pendingcat1 + answers)
