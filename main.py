@@ -35,7 +35,6 @@ def index():
 
 @app.route('/test', methods=['POST'])
 def process_data():
-    # Parse JSON from the request
     req_data = request.get_json()
 
     data = req_data['data']
@@ -57,6 +56,7 @@ def process_data():
     else:
         results = find_levels(data, userInput)
         filtered_results = [result for result in results if result[0] == 'Key']
+        new_selection_paths = []
 
         for result in filtered_results:
             _, value, path = result
@@ -67,8 +67,15 @@ def process_data():
                     answers.extend(current_answers)
                 else:
                     answers.append(current_answers)
-                # Update selection_paths with the current path
-                selection_paths.append(full_path[:-1])  # Exclude 'names' from the path
+                new_selection_paths.append(path + [value])  # Update with current full path
+
+        # Remove subpaths and ensure only the paths for the latest level are kept
+        final_paths = []
+        for path in new_selection_paths:
+            if not any(path != other_path and set(path).issubset(set(other_path)) for other_path in new_selection_paths):
+                final_paths.append(path)
+
+        selection_paths = final_paths  # Update selection_paths with filtered final paths
 
     # Combine allowed values: pendingcat1, user_input, and answers
     allowed_values = set(pendingcat1 + answers)
