@@ -67,12 +67,16 @@ def process_data():
                     answers.extend(current_answers)
                 else:
                     answers.append(current_answers)
-                # Update selection_paths with the current path
-                latest_path = path
+                new_paths.append(path)  # Collect new path excluding 'names'
 
-                # Reset selection_paths to only include the latest_path, ensuring it's not duplicated
-        if latest_path is not None:
-            selection_paths = [latest_path]  # Here we set selection_paths to only contain the latest path
+         # Filter out subpaths: Keep only longest unique paths
+        unique_paths = []
+        for path in new_paths:
+            if not any(path != other_path and path[:len(other_path)] == other_path for other_path in new_paths):
+                unique_paths.append(path)
+
+        # Update selection_paths to include these unique, latest paths
+        selection_paths = unique_paths
 
     # Combine allowed values: pendingcat1, user_input, and answers
     allowed_values = set(pendingcat1 + answers)
