@@ -47,7 +47,7 @@ def process_data():
     selection_paths = req_data['selection_paths']
     answers = []
 
-    if pendingcat1 == []:
+    if pendingcat1 == [] and selection_paths == []:
         pendingcat1 = [cat for cat in pickedCats if cat in data['names']]
 
     if len(pendingcat1) >= len(pendingCategories):
