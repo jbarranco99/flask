@@ -122,11 +122,13 @@ def filter_for_completeness(filtered_paths, original_paths):
 
 def is_path_complete(path, paths):
     """Check if all necessary ancestor paths for a given path exist."""
+    # Convert all paths to tuples for content-based comparison
+    paths_as_tuples = [tuple(p) for p in paths]
     # Generate all ancestor paths for the given path
-    ancestor_paths = [path[:i] for i in range(1, len(path))]
-    # Check if each ancestor path exists in the list of paths
+    ancestor_paths = [tuple(path[:i]) for i in range(1, len(path))]
+    # Check if each ancestor path exists in the list of paths (using tuples for comparison)
     for ancestor in ancestor_paths:
-        if ancestor not in paths:
+        if ancestor not in paths_as_tuples:
             return False  # An ancestor path is missing, so the path is incomplete
     return True  # All ancestor paths exist, so the path is complete
 
