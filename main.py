@@ -73,8 +73,10 @@ def process_data():
         #Filter out subpaths: Keep only longest unique paths
         final_paths = []
         for path in new_paths:
+            # Ensure path is not a subpath and matches the most recent user selection more accurately
             if not any(path != compare_path and path[:len(compare_path)] == compare_path for compare_path in new_paths):
-                final_paths.append(path)
+                if all(selection in path for selection in pickedCats + [userInput]):
+                    final_paths.append(path)
 
         # Update selection_paths to include these unique, latest paths
         selection_paths = final_paths
