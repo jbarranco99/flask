@@ -57,6 +57,7 @@ def process_data():
     else:
         results = find_levels(data, userInput)
         filtered_results = [result for result in results if result[0] == 'Key']
+        new_paths = []
 
         for result in filtered_results:
             _, value, path = result
@@ -67,16 +68,16 @@ def process_data():
                     answers.extend(current_answers)
                 else:
                     answers.append(current_answers)
-                new_paths.append(path)  # Collect new path excluding 'names'
+                new_paths.append(path + [value])  # Collect new path excluding 'names'
 
-         # Filter out subpaths: Keep only longest unique paths
-        unique_paths = []
+        #Filter out subpaths: Keep only longest unique paths
+        final_paths = []
         for path in new_paths:
-            if not any(path != other_path and path[:len(other_path)] == other_path for other_path in new_paths):
-                unique_paths.append(path)
+            if not any(path != compare_path and path[:len(compare_path)] == compare_path for compare_path in new_paths):
+                final_paths.append(path)
 
         # Update selection_paths to include these unique, latest paths
-        selection_paths = unique_paths
+        selection_paths = final_paths
 
     # Combine allowed values: pendingcat1, user_input, and answers
     allowed_values = set(pendingcat1 + answers)
