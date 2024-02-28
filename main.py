@@ -32,10 +32,12 @@ def find_levels(data, target_values, current_path=None, results=None):
 @app.route('/')
 def index():
     return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
+
 @app.route('/test', methods=['POST'])
 def process_data():
     # Parse JSON from the request
     req_data = request.get_json()
+
     data = req_data['data']
     gameStage = req_data['gameStage']
     pickedCats = req_data['pickedCats']
@@ -44,8 +46,10 @@ def process_data():
     userInput = req_data['userInput']
     selection_paths = req_data['selection_paths']
     answers = []
+
     if pendingcat1 == [] and selection_paths == []:
         pendingcat1 = [cat for cat in pickedCats if cat in data['names']]
+
     if len(pendingcat1) >= len(pendingCategories):
         answers = get_value(data, ['subcategories', pendingcat1[0], 'names'])
         pendingcat1.pop(0)
@@ -53,37 +57,28 @@ def process_data():
     else:
         results = find_levels(data, userInput)
         filtered_results = [result for result in results if result[0] == 'Key']
-        new_paths = []
 
         for result in filtered_results:
             _, value, path = result
-@@ -67,16 +68,16 @@ def process_data():
+            full_path = path + [value, 'names']
+            current_answers = get_value(data, full_path)
+            if current_answers is not None:
+                if isinstance(current_answers, list):
                     answers.extend(current_answers)
                 else:
                     answers.append(current_answers)
-                new_paths.append(path)  # Collect new path excluding 'names'
-                new_paths.append(path + [value])  # Collect new path excluding 'names'
-
-         # Filter out subpaths: Keep only longest unique paths
-        unique_paths = []
-        #Filter out subpaths: Keep only longest unique paths
-        final_paths = []
-        for path in new_paths:
-            if not any(path != other_path and path[:len(other_path)] == other_path for other_path in new_paths):
-                unique_paths.append(path)
-            if not any(path != compare_path and path[:len(compare_path)] == compare_path for compare_path in new_paths):
-                final_paths.append(path)
-
-        # Update selection_paths to include these unique, latest paths
-        selection_paths = unique_paths
-        selection_paths = final_paths
+                # Update selection_paths with the current path
+                selection_paths.append(full_path[:-1])  # Exclude 'names' from the path
 
     # Combine allowed values: pendingcat1, user_input, and answers
     allowed_values = set(pendingcat1 + answers)
+
     # Update pending_categories to include only allowed values, and add new answers to the start
     pending_categories = [item for item in answers + pendingcat1]
+
     if len(pendingcat1) == len(pending_categories):
         gameStage = "dishPicker"
+
     return jsonify({
         "gameStage": gameStage,
         "answers": answers,
@@ -91,5 +86,6 @@ def process_data():
         "pending_categories": pending_categories,
         "selection_paths": selection_paths
     })
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)
