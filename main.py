@@ -90,5 +90,47 @@ def process_data():
         "game_started": game_started
     })
 
+@app.route('/filterPaths', methods=['POST'])
+def filter_paths():
+    # Parse the request data for paths
+    req_data = request.get_json()
+    paths = req_data.get('paths', [])  # List of paths
+
+    # Process paths to filter them
+    largest_paths = filter_largest_paths(paths)
+    complete_paths = filter_for_completeness(largest_paths, paths)
+
+    # Return the filtered paths
+    return jsonify({"filteredPaths": complete_paths})
+
+def filter_largest_paths(paths):
+    """Keep only the largest paths within each category."""
+    paths.sort(key=len, reverse=True)  # Sort paths by length, longest first
+    filtered_paths = []
+    for path in paths:
+        if not any(path[:len(fp)] == fp for fp in filtered_paths):
+            filtered_paths.append(path)
+    return filtered_paths
+
+def filter_for_completeness(filtered_paths, original_paths):
+    """Remove paths that are considered incomplete based on the absence of their necessary ancestor paths."""
+    complete_paths = []
+    for path in filtered_paths:
+        if is_path_complete(path, original_paths):
+            complete_paths.append(path)
+    return complete_paths
+
+def is_path_complete(path, paths):
+    """Check if all necessary ancestor paths for a given path exist."""
+    # Generate all ancestor paths for the given path
+    ancestor_paths = [path[:i] for i in range(1, len(path))]
+    # Check if each ancestor path exists in the list of paths
+    for ancestor in ancestor_paths:
+        if ancestor not in paths:
+            return False  # An ancestor path is missing, so the path is incomplete
+    return True  # All ancestor paths exist, so the path is complete
+
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)
