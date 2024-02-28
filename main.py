@@ -45,11 +45,13 @@ def process_data():
     pendingCategories = req_data['pendingCategories']
     userInput = req_data['userInput']
     selection_paths = req_data['selection_paths']
+    game_started = req_data['game_started']
     answers = []
 
-    if pendingcat1 == [] and selection_paths == []:
+    if pendingcat1 == [] and game_started == 0:
         pendingcat1 = [cat for cat in pickedCats if cat in data['names']]
-
+        game_started = 1
+        
     if len(pendingcat1) >= len(pendingCategories):
         answers = get_value(data, ['subcategories', pendingcat1[0], 'names'])
         pendingcat1.pop(0)
@@ -84,7 +86,8 @@ def process_data():
         "answers": answers,
         "pendingcat1": pendingcat1,
         "pending_categories": pending_categories,
-        "selection_paths": selection_paths
+        "selection_paths": selection_paths,
+        "game_started": game_started
     })
 
 if __name__ == '__main__':
