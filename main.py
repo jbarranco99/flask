@@ -90,48 +90,42 @@ def process_data():
         "game_started": game_started
     })
 
-@app.route('/filterPaths', methods=['POST'])
-def filter_paths():
-    # Parse the request data for paths
-    req_data = request.get_json()
-    paths = req_data.get('paths', [])  # List of paths
+# END API 1
 
-    # Process paths to filter them
-    largest_paths = filter_largest_paths(paths)
-    complete_paths = filter_for_completeness(largest_paths, paths)
+def normalize_path(path):
+    """Remove repetitive 'subcategories' entries for comparison."""
+    return [p for i, p in enumerate(path) if i % 2 != 0 or p != "subcategories"]
 
-    # Return the filtered paths
-    return jsonify({"filteredPaths": complete_paths})
+def is_path_complete(path, normalized_paths):
+    """Check if all necessary ancestor paths for a given path exist, using normalized paths for comparison."""
+    for i in range(2, len(path), 2):  # Skip every second element ('subcategories') and check ancestors
+        ancestor = tuple(path[:i])
+        if ancestor not in normalized_paths:
+            return False
+    return True
 
-def filter_largest_paths(paths):
-    """Keep only the largest paths within each category."""
-    paths.sort(key=len, reverse=True)  # Sort paths by length, longest first
-    filtered_paths = []
-    for path in paths:
-        if not any(path[:len(fp)] == fp for fp in filtered_paths):
-            filtered_paths.append(path)
-    return filtered_paths
-
-def filter_for_completeness(filtered_paths, original_paths):
-    """Remove paths that are considered incomplete based on the absence of their necessary ancestor paths."""
+def filter_for_completeness(paths):
+    """Filter paths to remove those considered incomplete."""
+    # Normalize all paths for comparison
+    normalized_paths = set(tuple(normalize_path(p)) for p in paths)
+    
     complete_paths = []
-    for path in filtered_paths:
-        if is_path_complete(path, original_paths):
+    for path in paths:
+        normalized_path = tuple(normalize_path(path))
+        if is_path_complete(path, normalized_paths):
             complete_paths.append(path)
     return complete_paths
 
-def is_path_complete(path, paths):
-    """Check if all necessary ancestor paths for a given path exist."""
-    # Convert all paths to tuples for content-based comparison
-    paths_as_tuples = [tuple(p) for p in paths]
-    # Generate all ancestor paths for the given path
-    ancestor_paths = [tuple(path[:i]) for i in range(1, len(path))]
-    # Check if each ancestor path exists in the list of paths (using tuples for comparison)
-    for ancestor in ancestor_paths:
-        if ancestor not in paths_as_tuples:
-            return False  # An ancestor path is missing, so the path is incomplete
-    return True  # All ancestor paths exist, so the path is complete
+# Adjusted API endpoint to reflect changes
+@app.route('/filterPaths', methods=['POST'])
+def filter_paths():
+    req_data = request.get_json()
+    paths = req_data.get('paths', [])
 
+    # Directly filter for completeness without prior largest path filtering
+    complete_paths = filter_for_completeness(paths)
+
+    return jsonify({"filteredPaths": complete_paths})
 
 
 if __name__ == '__main__':
