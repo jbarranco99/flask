@@ -94,27 +94,15 @@ def process_data():
 
 @app.route('/filterPaths', methods=['POST'])
 def filter_paths():
+    # Parse the request data
     req_data = request.get_json()
-    paths = req_data['paths']  # Assuming this structure based on your input
+    paths = req_data.get('paths', [])  # List of paths
 
-    # Convert paths to a format that simplifies checking ancestors
-    paths_as_tuples = [tuple(path) for path in paths]
+    # Process each path to remove "subcategory" elements
+    simplified_paths = [[item for item in path if item.lower() != "subcategories"] for path in paths]
 
-    # Function to check if every ancestor of a path exists in the paths list
-    def has_all_ancestors(path, paths_tuples):
-        for i in range(2, len(path), 2):  # Increment by 2 to skip every "subcategories" entry
-            ancestor = path[:i]
-            if ancestor not in paths_tuples:
-                return False
-        return True
-
-    # Filter paths to include only those where all ancestors exist
-    complete_paths = [path for path in paths_as_tuples if has_all_ancestors(path, paths_as_tuples)]
-
-    # Convert tuples back to list format for the response
-    complete_paths_as_lists = [list(path) for path in complete_paths]
-
-    return jsonify({"filteredPaths": complete_paths_as_lists})
+    # Return the simplified paths
+    return jsonify({"simplifiedPaths": simplified_paths})
 
 
 if __name__ == '__main__':
