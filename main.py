@@ -115,7 +115,10 @@ def filter_menu_items():
         if current_section and 'items' in current_section:
             filtered_items.extend(current_section['items'])
 
-    return jsonify(filtered_items)
+    return jsonify({
+        "filtered_items": filtered_items,
+        "paths": terminal_paths
+    })
 
 def filter_complete_paths(paths):
 
