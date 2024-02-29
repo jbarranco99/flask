@@ -92,39 +92,41 @@ def process_data():
 
 # END API 1
 
-def normalize_path(path):
-    """Remove repetitive 'subcategories' entries for comparison."""
-    return [p for i, p in enumerate(path) if i % 2 != 0 or p != "subcategories"]
+def is_path_complete(path, all_paths):
+    """
+    Check if a given path is 'complete' based on the presence of its ancestor paths.
+    A path is considered 'complete' if all its ancestors (up to the root) are present in the all_paths.
+    """
+    # Convert paths to string representation to facilitate comparison
+    all_paths_str = ['/'.join(p) for p in all_paths]
+    path_str = '/'.join(path)
 
-def is_path_complete(path, normalized_paths):
-    """Check if all necessary ancestor paths for a given path exist, using normalized paths for comparison."""
-    for i in range(2, len(path), 2):  # Skip every second element ('subcategories') and check ancestors
-        ancestor = tuple(path[:i])
-        if ancestor not in normalized_paths:
+    # Generate all ancestor paths for the given path
+    ancestors = path_str.split('/')[:-2]  # Exclude the last segment and its preceding 'subcategories'
+    ancestor_path = ''
+    for i, ancestor in enumerate(ancestors):
+        if i % 2 == 0:  # Skip 'subcategories'
+            continue
+        ancestor_path += '/' + ancestors[i-1] + '/' + ancestor  # Include 'subcategories' and the category
+        # Check if this ancestor path (from the root to this point) exists in all_paths
+        if ancestor_path.strip('/') not in all_paths_str:
             return False
+
     return True
 
 def filter_for_completeness(paths):
     """Filter paths to remove those considered incomplete."""
-    # Normalize all paths for comparison
-    normalized_paths = set(tuple(normalize_path(p)) for p in paths)
-    
-    complete_paths = []
-    for path in paths:
-        normalized_path = tuple(normalize_path(path))
-        if is_path_complete(path, normalized_paths):
-            complete_paths.append(path)
+    complete_paths = [path for path in paths if is_path_complete(path, paths)]
     return complete_paths
 
-# Adjusted API endpoint to reflect changes
 @app.route('/filterPaths', methods=['POST'])
 def filter_paths():
     req_data = request.get_json()
     paths = req_data.get('paths', [])
 
-    # Directly filter for completeness without prior largest path filtering
     complete_paths = filter_for_completeness(paths)
 
+    # Convert paths back to their original format for the response
     return jsonify({"filteredPaths": complete_paths})
 
 
