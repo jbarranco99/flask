@@ -134,30 +134,27 @@ def is_prefix(path, other_path):
 # END API 2
 
 @app.route('/filterDishesByPaths', methods=['POST'])
-def filter_dishes_by_paths():
+def filter_menu_items():
     req_data = request.get_json()
-    paths = req_data.get('paths', [])
-    menu_data = req_data.get('menu', {})
+    paths = req_data.get('paths', [])  # The paths to filter by
+    menu_data = req_data.get('menu', {})  # The complete menu data
 
-    filtered_dishes = filter_dishes_based_on_paths(paths, menu_data)
+    filtered_items = []  # To store the final filtered items
 
-    return jsonify({"filteredDishes": filtered_dishes})
-
-def filter_dishes_based_on_paths(complete_paths, menu_data):
-    filtered_dishes = []
-    for path in complete_paths:
-        # Start from the root of the menu
-        current_node = menu_data
-        for step in path:
-            # Navigate down the menu structure according to the path
-            current_node = current_node.get(step, {})
-            # If there's no further path to follow, break the loop
-            if not current_node:
+    # Traverse each path to find and accumulate the corresponding items
+    for path in paths:
+        current_section = menu_data['categories']  # Starting point
+        for category in path:
+            if category in current_section:
+                current_section = current_section[category]
+            else:
+                # If any part of the path is not found, skip to the next path
+                current_section = None
                 break
-        # If current_node has items, it's a terminal node with dishes
-        if 'items' in current_node:
-            filtered_dishes.extend(current_node['items'])
-    return filtered_dishes
+        if current_section and 'items' in current_section:
+            filtered_items.extend(current_section['items'])
+
+    return jsonify(filtered_items)
 
 
 if __name__ == '__main__':
