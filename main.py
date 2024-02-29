@@ -92,42 +92,32 @@ def process_data():
 
 # END API 1
 
-def is_path_complete(path, all_paths):
-    """
-    Check if a given path is 'complete' based on the presence of its ancestor paths.
-    A path is considered 'complete' if all its ancestors (up to the root) are present in the all_paths.
-    """
-    # Convert paths to string representation to facilitate comparison
-    all_paths_str = ['/'.join(p) for p in all_paths]
-    path_str = '/'.join(path)
-
-    # Generate all ancestor paths for the given path
-    ancestors = path_str.split('/')[:-2]  # Exclude the last segment and its preceding 'subcategories'
-    ancestor_path = ''
-    for i, ancestor in enumerate(ancestors):
-        if i % 2 == 0:  # Skip 'subcategories'
-            continue
-        ancestor_path += '/' + ancestors[i-1] + '/' + ancestor  # Include 'subcategories' and the category
-        # Check if this ancestor path (from the root to this point) exists in all_paths
-        if ancestor_path.strip('/') not in all_paths_str:
-            return False
-
-    return True
-
-def filter_for_completeness(paths):
-    """Filter paths to remove those considered incomplete."""
-    complete_paths = [path for path in paths if is_path_complete(path, paths)]
-    return complete_paths
-
 @app.route('/filterPaths', methods=['POST'])
 def filter_paths():
     req_data = request.get_json()
     paths = req_data.get('paths', [])
 
+    # Directly filter paths for completeness
     complete_paths = filter_for_completeness(paths)
 
-    # Convert paths back to their original format for the response
     return jsonify({"filteredPaths": complete_paths})
+
+def filter_for_completeness(paths):
+    """Filter paths to ensure each is complete, meaning all its ancestors exist."""
+    # Create a list of paths as tuples for easier comparison
+    path_tuples = [tuple(path) for path in paths]
+    
+    # Function to check if the path's ancestors exist
+    def is_complete(path):
+        for i in range(2, len(path), 2):  # Check every segment of the path
+            ancestor = path[:i]
+            if ancestor not in path_tuples:
+                return False
+        return True
+    
+    # Filter paths based on their completeness
+    complete_paths = [list(path) for path in path_tuples if is_complete(path)]
+    return complete_paths
 
 
 if __name__ == '__main__':
