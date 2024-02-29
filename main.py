@@ -131,7 +131,33 @@ def is_prefix(path, other_path):
     if len(path) >= len(other_path):
         return False
     return all(path[i] == other_path[i] for i in range(len(path)))
+# END API 2
 
+@app.route('/filterDishesByPaths', methods=['POST'])
+def filter_dishes_by_paths():
+    req_data = request.get_json()
+    paths = req_data.get('paths', [])
+    menu_data = req_data.get('menu', {})
+
+    filtered_dishes = filter_dishes_based_on_paths(paths, menu_data)
+
+    return jsonify({"filteredDishes": filtered_dishes})
+
+def filter_dishes_based_on_paths(complete_paths, menu_data):
+    filtered_dishes = []
+    for path in complete_paths:
+        # Start from the root of the menu
+        current_node = menu_data
+        for step in path:
+            # Navigate down the menu structure according to the path
+            current_node = current_node.get(step, {})
+            # If there's no further path to follow, break the loop
+            if not current_node:
+                break
+        # If current_node has items, it's a terminal node with dishes
+        if 'items' in current_node:
+            filtered_dishes.extend(current_node['items'])
+    return filtered_dishes
 
 
 if __name__ == '__main__':
