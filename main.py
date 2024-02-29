@@ -95,29 +95,26 @@ def process_data():
 @app.route('/filterPaths', methods=['POST'])
 def filter_paths():
     req_data = request.get_json()
-    paths = req_data.get('paths', [])
+    paths = req_data['paths']  # Assuming this structure based on your input
 
-    # Directly filter paths for completeness
-    complete_paths = filter_for_completeness(paths)
+    # Convert paths to a format that simplifies checking ancestors
+    paths_as_tuples = [tuple(path) for path in paths]
 
-    return jsonify({"filteredPaths": complete_paths})
-
-def filter_for_completeness(paths):
-    """Filter paths to ensure each is complete, meaning all its ancestors exist."""
-    # Create a list of paths as tuples for easier comparison
-    path_tuples = [tuple(path) for path in paths]
-    
-    # Function to check if the path's ancestors exist
-    def is_complete(path):
-        for i in range(2, len(path), 2):  # Check every segment of the path
+    # Function to check if every ancestor of a path exists in the paths list
+    def has_all_ancestors(path, paths_tuples):
+        for i in range(2, len(path), 2):  # Increment by 2 to skip every "subcategories" entry
             ancestor = path[:i]
-            if ancestor not in path_tuples:
+            if ancestor not in paths_tuples:
                 return False
         return True
-    
-    # Filter paths based on their completeness
-    complete_paths = [list(path) for path in path_tuples if is_complete(path)]
-    return complete_paths
+
+    # Filter paths to include only those where all ancestors exist
+    complete_paths = [path for path in paths_as_tuples if has_all_ancestors(path, paths_as_tuples)]
+
+    # Convert tuples back to list format for the response
+    complete_paths_as_lists = [list(path) for path in complete_paths]
+
+    return jsonify({"filteredPaths": complete_paths_as_lists})
 
 
 if __name__ == '__main__':
