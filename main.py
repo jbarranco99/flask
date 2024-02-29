@@ -94,45 +94,43 @@ def process_data():
 
 @app.route('/filterPaths', methods=['POST'])
 def filter_complete_paths():
-    # Parse the request data
     req_data = request.get_json()
     paths = req_data.get('paths', [])  # List of paths
 
-    # Simplify paths by removing "subcategories"
     simplified_paths = [[item for item in path if item.lower() != "subcategories"] for path in paths]
-
-    # Filter paths to ensure completeness
     complete_paths = filter_paths_with_all_ancestors(simplified_paths)
+    terminal_paths = filter_for_terminal_paths(complete_paths)
 
-    # Return the filtered paths
-    return jsonify({"completePaths": complete_paths})
+    return jsonify({"completePaths": terminal_paths})
 
 def filter_paths_with_all_ancestors(simplified_paths):
-    def immediate_ancestor_present(path, all_paths_set):
-        # Directly return True for top-level paths
-        if len(path) == 1:
-            return True
-        # For other paths, check if the immediate ancestor exists in the set
-        immediate_ancestor = path[:-1]
-        return tuple(immediate_ancestor) in all_paths_set
-
-    # Convert list of paths to a set of tuples for easier and faster comparison
     paths_as_tuples_set = set(tuple(path) for path in simplified_paths)
-
-    # Keep paths if their immediate ancestor is present or if they are top-level paths
     complete_paths_tuples = [path for path in paths_as_tuples_set if immediate_ancestor_present(path, paths_as_tuples_set)]
-
-    # Convert tuples back to lists for the output
     complete_paths_lists = [list(path) for path in complete_paths_tuples]
+    return ensure_base_paths(complete_paths_lists)
 
-    # Ensure the base path is always included if extensions of it are present
+def immediate_ancestor_present(path, all_paths_set):
+    if len(path) == 1:
+        return True
+    immediate_ancestor = path[:-1]
+    return tuple(immediate_ancestor) in all_paths_set
+
+def ensure_base_paths(complete_paths_lists):
     for path in complete_paths_lists:
-        if len(path) > 1:  # More than a top-level category indicates a potential base path
-            base_path = path[:2]  # Considering "Drinks" -> "Alcoholic" as the base
+        if len(path) > 1:
+            base_path = path[:2]
             if base_path not in complete_paths_lists:
                 complete_paths_lists.append(base_path)
-
     return complete_paths_lists
+
+def filter_for_terminal_paths(paths):
+    terminal_paths = [path for path in paths if not any(is_prefix(path, other) for other in paths if path != other)]
+    return terminal_paths
+
+def is_prefix(path, other_path):
+    if len(path) >= len(other_path):
+        return False
+    return all(path[i] == other_path[i] for i in range(len(path)))
 
 
 
