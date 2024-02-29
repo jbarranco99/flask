@@ -93,56 +93,17 @@ def process_data():
 # END API 1
 
 @app.route('/filterPaths', methods=['POST'])
-def filter_complete_paths():
-    req_data = request.get_json()
-    paths = req_data.get('paths', [])  # List of paths
 
-    simplified_paths = [[item for item in path if item.lower() != "subcategories"] for path in paths]
-    complete_paths = filter_paths_with_all_ancestors(simplified_paths)
-    terminal_paths = filter_for_terminal_paths(complete_paths)
-
-    return jsonify({"completePaths": terminal_paths})
-
-def filter_paths_with_all_ancestors(simplified_paths):
-    paths_as_tuples_set = set(tuple(path) for path in simplified_paths)
-    complete_paths_tuples = [path for path in paths_as_tuples_set if immediate_ancestor_present(path, paths_as_tuples_set)]
-    complete_paths_lists = [list(path) for path in complete_paths_tuples]
-    return ensure_base_paths(complete_paths_lists)
-
-def immediate_ancestor_present(path, all_paths_set):
-    if len(path) == 1:
-        return True
-    immediate_ancestor = path[:-1]
-    return tuple(immediate_ancestor) in all_paths_set
-
-def ensure_base_paths(complete_paths_lists):
-    for path in complete_paths_lists:
-        if len(path) > 1:
-            base_path = path[:2]
-            if base_path not in complete_paths_lists:
-                complete_paths_lists.append(base_path)
-    return complete_paths_lists
-
-def filter_for_terminal_paths(paths):
-    terminal_paths = [path for path in paths if not any(is_prefix(path, other) for other in paths if path != other)]
-    return terminal_paths
-
-def is_prefix(path, other_path):
-    if len(path) >= len(other_path):
-        return False
-    return all(path[i] == other_path[i] for i in range(len(path)))
-# END API 2
-
-@app.route('/filterDishesByPaths', methods=['POST'])
 def filter_menu_items():
     req_data = request.get_json()
     paths = req_data.get('paths', [])  # The paths to filter by
     menu_data = req_data.get('menu', {})  # The complete menu data
 
     filtered_items = []  # To store the final filtered items
-
+    
+    terminal_paths = filter_complete_paths(paths)
     # Traverse each path to find and accumulate the corresponding items
-    for path in paths:
+    for path in terminal_paths:
         current_section = menu_data['categories']  # Starting point
         for category in path:
             if category in current_section:
@@ -155,6 +116,49 @@ def filter_menu_items():
             filtered_items.extend(current_section['items'])
 
     return jsonify(filtered_items)
+
+def filter_complete_paths(paths):
+
+    simplified_paths = [[item for item in path if item.lower() != "subcategories"] for path in paths]
+    complete_paths = filter_paths_with_all_ancestors(simplified_paths)
+    terminal_paths = filter_for_terminal_paths(complete_paths)
+
+    return terminal_paths
+
+
+def filter_paths_with_all_ancestors(simplified_paths):
+    paths_as_tuples_set = set(tuple(path) for path in simplified_paths)
+    complete_paths_tuples = [path for path in paths_as_tuples_set if
+                             immediate_ancestor_present(path, paths_as_tuples_set)]
+    complete_paths_lists = [list(path) for path in complete_paths_tuples]
+    return ensure_base_paths(complete_paths_lists)
+
+
+def immediate_ancestor_present(path, all_paths_set):
+    if len(path) == 1:
+        return True
+    immediate_ancestor = path[:-1]
+    return tuple(immediate_ancestor) in all_paths_set
+
+
+def ensure_base_paths(complete_paths_lists):
+    for path in complete_paths_lists:
+        if len(path) > 1:
+            base_path = path[:2]
+            if base_path not in complete_paths_lists:
+                complete_paths_lists.append(base_path)
+    return complete_paths_lists
+
+
+def filter_for_terminal_paths(paths):
+    terminal_paths = [path for path in paths if not any(is_prefix(path, other) for other in paths if path != other)]
+    return terminal_paths
+
+
+def is_prefix(path, other_path):
+    if len(path) >= len(other_path):
+        return False
+    return all(path[i] == other_path[i] for i in range(len(path)))
 
 
 if __name__ == '__main__':
