@@ -93,16 +93,38 @@ def process_data():
 # END API 1
 
 @app.route('/filterPaths', methods=['POST'])
-def filter_paths():
+def filter_complete_paths():
     # Parse the request data
     req_data = request.get_json()
     paths = req_data.get('paths', [])  # List of paths
 
-    # Process each path to remove "subcategory" elements
+    # Simplify paths by removing "subcategories"
     simplified_paths = [[item for item in path if item.lower() != "subcategories"] for path in paths]
 
-    # Return the simplified paths
-    return jsonify({"simplifiedPaths": simplified_paths})
+    # Filter paths to ensure all ancestors are present
+    complete_paths = filter_paths_with_all_ancestors(simplified_paths)
+
+    # Return the filtered paths
+    return jsonify({"completePaths": complete_paths})
+
+def filter_paths_with_all_ancestors(simplified_paths):
+    def immediate_ancestor_present(path, all_paths):
+        # Top-level paths are always considered complete
+        if len(path) == 1:
+            return True
+        # Check for the immediate ancestor of the path (path[:-1])
+        immediate_ancestor = path[:-1]
+        return immediate_ancestor in all_paths
+
+    # Convert list of paths to list of tuples for easier comparison
+    paths_as_tuples = set(tuple(path) for path in simplified_paths)
+    # Keep paths if their immediate ancestor is present (or if they are top-level paths)
+    complete_paths_tuples = [path for path in paths_as_tuples if immediate_ancestor_present(path, paths_as_tuples)]
+
+    # Convert tuples back to lists for the output
+    complete_paths_lists = [list(path) for path in complete_paths_tuples]
+    return complete_paths_lists
+
 
 
 if __name__ == '__main__':
