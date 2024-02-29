@@ -101,28 +101,37 @@ def filter_complete_paths():
     # Simplify paths by removing "subcategories"
     simplified_paths = [[item for item in path if item.lower() != "subcategories"] for path in paths]
 
-    # Filter paths to ensure all ancestors are present
+    # Filter paths to ensure completeness
     complete_paths = filter_paths_with_all_ancestors(simplified_paths)
 
     # Return the filtered paths
     return jsonify({"completePaths": complete_paths})
 
 def filter_paths_with_all_ancestors(simplified_paths):
-    def immediate_ancestor_present(path, all_paths):
-        # Top-level paths are always considered complete
+    def immediate_ancestor_present(path, all_paths_set):
+        # Directly return True for top-level paths
         if len(path) == 1:
             return True
-        # Check for the immediate ancestor of the path (path[:-1])
+        # For other paths, check if the immediate ancestor exists in the set
         immediate_ancestor = path[:-1]
-        return immediate_ancestor in all_paths
+        return tuple(immediate_ancestor) in all_paths_set
 
-    # Convert list of paths to list of tuples for easier comparison
-    paths_as_tuples = set(tuple(path) for path in simplified_paths)
-    # Keep paths if their immediate ancestor is present (or if they are top-level paths)
-    complete_paths_tuples = [path for path in paths_as_tuples if immediate_ancestor_present(path, paths_as_tuples)]
+    # Convert list of paths to a set of tuples for easier and faster comparison
+    paths_as_tuples_set = set(tuple(path) for path in simplified_paths)
+
+    # Keep paths if their immediate ancestor is present or if they are top-level paths
+    complete_paths_tuples = [path for path in paths_as_tuples_set if immediate_ancestor_present(path, paths_as_tuples_set)]
 
     # Convert tuples back to lists for the output
     complete_paths_lists = [list(path) for path in complete_paths_tuples]
+
+    # Ensure the base path is always included if extensions of it are present
+    for path in complete_paths_lists:
+        if len(path) > 1:  # More than a top-level category indicates a potential base path
+            base_path = path[:2]  # Considering "Drinks" -> "Alcoholic" as the base
+            if base_path not in complete_paths_lists:
+                complete_paths_lists.append(base_path)
+
     return complete_paths_lists
 
 
