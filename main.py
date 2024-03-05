@@ -96,7 +96,7 @@ def process_data():
 
 def filter_menu_items():
     req_data = request.get_json()
-    paths = req_data.get('paths', [])  # The paths to filter by
+    paths = req_data.get('paths', {})  # The paths to filter by
     menu_data = req_data.get('menu', {})  # The complete menu data
 
     filtered_items = []  # To store the final filtered items
