@@ -37,14 +37,13 @@ def index():
 def process_data():
     # Parse JSON from the request
     req_data = request.get_json()
-
     data = req_data['data']
     gameStage = req_data['gameStage']
     pickedCats = req_data['pickedCats']
     pendingcat1 = req_data['pendingcat1']
     pendingCategories = req_data['pendingCategories']
     userInput = req_data['userInput']
-    selection_paths = req_data['selection_paths']
+    selection_paths = req_data.get('selection_paths', {})
     game_started = req_data['game_started']
     answers = []
 
