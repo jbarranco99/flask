@@ -52,6 +52,7 @@ def process_data():
     pendingCategories = req_data['pendingCategories']
     userInput = req_data['userInput']
     selection_paths = req_data['selection_paths']
+    selection_paths = string_paths_to_lists(string_paths, delimiter='/')
     game_started = req_data['game_started']
     menu_data = req_data.get('menu', {})  # The complete menu data
     answers = []
@@ -179,6 +180,15 @@ def paths_to_string(paths, delimiter='/'):
 # Step 2: Use the function before returning the response in your `process_data` function
 # For example, right before returning jsonify in the `process_data` function:
 
+def string_paths_to_lists(string_paths, delimiter='/'):
+    """
+    Convert a list of string paths back to a list of lists of keys.
+
+    :param string_paths: A list of strings, where each string represents a path using a specific delimiter.
+    :param delimiter: The delimiter used in the string paths.
+    :return: A list of lists, where each inner list represents the keys of a path.
+    """
+    return [path.split(delimiter) for path in string_paths]
 
 
 if __name__ == '__main__':
