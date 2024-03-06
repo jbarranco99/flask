@@ -56,6 +56,8 @@ def process_data():
     menu_data = req_data.get('menu', {})  # The complete menu data
     answers = []
     filtered_items = []  # To store the final filtered items
+    # Convert selection paths from strings to lists
+    selection_paths = [ast.literal_eval(path) for path in selection_path_strings]
 
     if pendingcat1 == [] and game_started == 0:
         pendingcat1 = [cat for cat in pickedCats if cat in data['names']]
@@ -137,11 +139,14 @@ def immediate_ancestor_present(path, all_paths_set):
 
 
 def ensure_base_paths(complete_paths_lists):
+    # This part needs special attention to prevent modifying the list while iterating over it
+    additional_base_paths = []
     for path in complete_paths_lists:
         if len(path) > 1:
             base_path = path[:2]
             if base_path not in complete_paths_lists:
-                complete_paths_lists.append(base_path)
+                additional_base_paths.append(base_path)
+    complete_paths_lists.extend(additional_base_paths)
     return complete_paths_lists
 
 
@@ -153,7 +158,7 @@ def filter_for_terminal_paths(paths):
 def is_prefix(path, other_path):
     if len(path) >= len(other_path):
         return False
-    return all(path[i] == other_path[i] for i in range(len(path)))
+    return all(path[i] == other_path[i] for i in range(len(path))))
 
 
 if __name__ == '__main__':
