@@ -91,7 +91,7 @@ def process_data():
         gameStage = "dishPicker"
         selection_paths = convert_selection_paths(selection_paths) ## CAMBIAR A SOLO CUANDO VA A DISHPICKER
         terminal_paths = filter_complete_paths(selection_paths)
-         Traverse each path to find and accumulate the corresponding items
+        #Traverse each path to find and accumulate the corresponding items
         for path in terminal_paths:
             current_section = menu_data['categories']  # Starting point
             for category in path:
