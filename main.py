@@ -168,27 +168,17 @@ def convert_selection_paths(input_paths):
         converted_paths.append(clean_elements)
     return converted_paths
 
+def string_paths_to_lists(string_paths, delimiter='/'):
+    """
+    Convert a list of string paths to a list of lists of keys.
+    """
+    return [path.split(delimiter) for path in string_paths]
+
 def paths_to_string(paths, delimiter='/'):
     """
     Convert each path in paths to a string using the given delimiter.
-    :param paths: A list of paths, where each path is a list of keys.
-    :param delimiter: The delimiter to use for joining keys in a path.
-    :return: A list of strings, where each string represents a path.
     """
-    return [delimiter.join(map(str, path)) for path in paths]
-
-# Step 2: Use the function before returning the response in your `process_data` function
-# For example, right before returning jsonify in the `process_data` function:
-
-def string_paths_to_lists(string_paths, delimiter='/'):
-    """
-    Convert a list of string paths back to a list of lists of keys.
-
-    :param string_paths: A list of strings, where each string represents a path using a specific delimiter.
-    :param delimiter: The delimiter used in the string paths.
-    :return: A list of lists, where each inner list represents the keys of a path.
-    """
-    return [path.split(delimiter) for path in string_paths]
+    return [delimiter.join(path) for path in paths]
 
 
 if __name__ == '__main__':
