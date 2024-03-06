@@ -66,6 +66,11 @@ def process_data():
         answers = get_value(data, ['subcategories', pendingcat1[0], 'names'])
         pendingcat1.pop(0)
         pendingCategories.extend(answers)
+        
+        if 'subcategories' in data and pendingcat1[0] in data['subcategories']:
+        # This assumes that the structure to reach 'names' for a pending category is ['subcategories', <category>]
+        selection_path = ['subcategories', pendingcat1[0]]
+        selection_paths.append(selection_path)
 
     else:
         results = find_levels(data, userInput)
