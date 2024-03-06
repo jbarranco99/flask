@@ -1,6 +1,9 @@
 from flask import Flask, request, jsonify
 import os
+
 app = Flask(__name__)
+
+
 def get_value(d, path):
     """Safely get a value from a nested dictionary using a list of keys."""
     for key in path:
@@ -12,6 +15,8 @@ def get_value(d, path):
         except (KeyError, TypeError, ValueError, IndexError):
             return None
     return d
+
+
 def find_levels(data, target_values, current_path=None, results=None):
     """Recursively find and record levels of target values in a nested structure."""
     if current_path is None:
@@ -29,9 +34,12 @@ def find_levels(data, target_values, current_path=None, results=None):
                 results.append(('Value', item, current_path + [str(index)]))
             find_levels(item, target_values, current_path + [str(index)], results)
     return results
+
+
 @app.route('/')
 def index():
     return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
+
 
 @app.route('/test', methods=['POST'])
 def process_data():
@@ -45,12 +53,14 @@ def process_data():
     userInput = req_data['userInput']
     selection_paths = req_data.get('selection_paths', {})
     game_started = req_data['game_started']
+    menu_data = req_data.get('menu', {})  # The complete menu data
     answers = []
+    filtered_items = []  # To store the final filtered items
 
     if pendingcat1 == [] and game_started == 0:
         pendingcat1 = [cat for cat in pickedCats if cat in data['names']]
         game_started = 1
-        
+
     if len(pendingcat1) >= len(pendingCategories):
         answers = get_value(data, ['subcategories', pendingcat1[0], 'names'])
         pendingcat1.pop(0)
@@ -79,6 +89,19 @@ def process_data():
 
     if len(pendingcat1) == len(pending_categories):
         gameStage = "dishPicker"
+        terminal_paths = filter_complete_paths(selection_paths)
+        # Traverse each path to find and accumulate the corresponding items
+        for path in terminal_paths:
+            current_section = menu_data['categories']  # Starting point
+            for category in path:
+                if category in current_section:
+                    current_section = current_section[category]
+                else:
+                    # If any part of the path is not found, skip to the next path
+                    current_section = None
+                    break
+            if current_section and 'items' in current_section:
+                filtered_items.extend(current_section['items'])
 
     return jsonify({
         "gameStage": gameStage,
@@ -86,41 +109,11 @@ def process_data():
         "pendingcat1": pendingcat1,
         "pending_categories": pending_categories,
         "selection_paths": selection_paths,
-        "game_started": game_started
-    })
-
-# END API 1
-
-@app.route('/filterPaths', methods=['POST'])
-
-def filter_menu_items():
-    req_data = request.get_json()
-    paths = req_data.get('paths', {})  # The paths to filter by
-    menu_data = req_data.get('menu', {})  # The complete menu data
-
-    filtered_items = []  # To store the final filtered items
-    
-    terminal_paths = filter_complete_paths(paths)
-    # Traverse each path to find and accumulate the corresponding items
-    for path in terminal_paths:
-        current_section = menu_data['categories']  # Starting point
-        for category in path:
-            if category in current_section:
-                current_section = current_section[category]
-            else:
-                # If any part of the path is not found, skip to the next path
-                current_section = None
-                break
-        if current_section and 'items' in current_section:
-            filtered_items.extend(current_section['items'])
-
-    return jsonify({
-        "filtered_items": filtered_items,
-        "paths": terminal_paths
+        "game_started": game_started,
+        "filtered_items": filtered_items
     })
 
 def filter_complete_paths(paths):
-
     simplified_paths = [[item for item in path if item.lower() != "subcategories"] for path in paths]
     complete_paths = filter_paths_with_all_ancestors(simplified_paths)
     terminal_paths = filter_for_terminal_paths(complete_paths)
