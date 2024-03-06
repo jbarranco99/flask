@@ -103,6 +103,10 @@ def process_data():
             if current_section and 'items' in current_section:
                 filtered_items.extend(current_section['items'])
 
+
+    if selection_paths is None:
+        selection_paths = []
+    
     return jsonify({
         "gameStage": gameStage,
         "answers": answers,
