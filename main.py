@@ -52,7 +52,6 @@ def process_data():
     pendingCategories = req_data['pendingCategories']
     userInput = req_data['userInput']
     selection_paths = req_data.get('selection_paths', [])
-    selection_paths = convert_selection_paths(selection_paths) ## CAMBIAR A SOLO CUANDO VA A DISHPICKER
     game_started = req_data['game_started']
     menu_data = req_data.get('menu', {})  # The complete menu data
     answers = []
@@ -90,6 +89,7 @@ def process_data():
 
     if len(pendingcat1) == len(pending_categories):
         gameStage = "dishPicker"
+        selection_paths = convert_selection_paths(selection_paths) ## CAMBIAR A SOLO CUANDO VA A DISHPICKER
         terminal_paths = filter_complete_paths(selection_paths)
         # Traverse each path to find and accumulate the corresponding items
         for path in terminal_paths:
