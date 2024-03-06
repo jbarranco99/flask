@@ -81,7 +81,6 @@ def process_data():
                     answers.append(current_answers)
                 # Update selection_paths with the current path
                 selection_paths.append(full_path[:-1])  # Exclude 'names' from the path
-                selection_paths = paths_to_string(selection_paths, delimiter='/')  # or use '.' as your delimiter
 
     # Combine allowed values: pendingcat1, user_input, and answers
     allowed_values = set(pendingcat1 + answers)
@@ -91,7 +90,6 @@ def process_data():
 
     if len(pendingcat1) == len(pending_categories):
         gameStage = "dishPicker"
-        selection_paths = convert_selection_paths(selection_paths) ## CAMBIAR A SOLO CUANDO VA A DISHPICKER
         terminal_paths = filter_complete_paths(selection_paths)
         #Traverse each path to find and accumulate the corresponding items
         for path in terminal_paths:
@@ -106,13 +104,14 @@ def process_data():
             if current_section and 'items' in current_section:
                 filtered_items.extend(current_section['items'])
 
+    selection_paths_strings = paths_to_string(selection_paths, delimiter='/')
     
     return jsonify({
         "gameStage": gameStage,
         "answers": answers,
         "pendingcat1": pendingcat1,
         "pending_categories": pending_categories,
-        "selection_paths": selection_paths,
+        "selection_paths": selection_paths_strings,
         "game_started": game_started,
         "filtered_items": filtered_items
     })
