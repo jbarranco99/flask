@@ -106,7 +106,7 @@ def process_data():
             if current_section and 'items' in current_section:
                 filtered_items.extend(current_section['items'])
 
-    selection_paths = paths_to_string(selection_paths, delimiter='/')  # or use '.' as your delimiter
+    #selection_paths = paths_to_string(selection_paths, delimiter='/')  # or use '.' as your delimiter
     return jsonify({
         "gameStage": gameStage,
         "answers": answers,
