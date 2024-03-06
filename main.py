@@ -81,7 +81,7 @@ def process_data():
                     answers.append(current_answers)
                 # Update selection_paths with the current path
                 selection_paths.append(full_path[:-1])  # Exclude 'names' from the path
-                selection_paths = paths_to_string(selection_paths, delimiter='/')  # or use '.' as your delimiter
+                
 
     # Combine allowed values: pendingcat1, user_input, and answers
     allowed_values = set(pendingcat1 + answers)
@@ -106,6 +106,7 @@ def process_data():
             if current_section and 'items' in current_section:
                 filtered_items.extend(current_section['items'])
 
+    selection_paths = paths_to_string(selection_paths, delimiter='/')  # or use '.' as your delimiter
     return jsonify({
         "gameStage": gameStage,
         "answers": answers,
