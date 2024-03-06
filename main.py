@@ -66,6 +66,7 @@ def process_data():
         answers = get_value(data, ['subcategories', pendingcat1[0], 'names'])
         pendingcat1.pop(0)
         pendingCategories.extend(answers)
+        
     else:
         results = find_levels(data, userInput)
         filtered_results = [result for result in results if result[0] == 'Key']
@@ -92,17 +93,20 @@ def process_data():
         gameStage = "dishPicker"
         terminal_paths = filter_complete_paths(selection_paths)
         #Traverse each path to find and accumulate the corresponding items
+        # Assuming 'menu_data' is your complete menu structure
+        # and 'terminal_paths' are the paths you've determined to traverse:
         for path in terminal_paths:
-            current_section = menu_data['categories']  # Starting point
+            current_section = menu_data['categories']  # Starting point for traversal
             for category in path:
                 if category in current_section:
                     current_section = current_section[category]
                 else:
-                    # If any part of the path is not found, skip to the next path
                     current_section = None
                     break
-            if current_section and 'items' in current_section:
-                filtered_items.extend(current_section['items'])
+            items = find_items(current_section) if current_section else None
+            if items:
+                filtered_items.extend(items)
+        
 
     selection_paths_strings = paths_to_string(selection_paths, delimiter='/')
     
@@ -179,6 +183,16 @@ def paths_to_string(paths, delimiter='/'):
     Convert each path in paths to a string using the given delimiter.
     """
     return [delimiter.join(path) for path in paths]
+
+def find_items(current_section):
+    if 'items' in current_section:
+        return current_section['items']
+    for key, subsection in current_section.items():
+        if isinstance(subsection, dict):
+            items = find_items(subsection)
+            if items:
+                return items
+    return None
 
 
 if __name__ == '__main__':
