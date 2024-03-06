@@ -51,7 +51,7 @@ def process_data():
     pendingcat1 = req_data['pendingcat1']
     pendingCategories = req_data['pendingCategories']
     userInput = req_data['userInput']
-    selection_paths = req_data.get('selection_paths', [])
+    selection_paths = req_data['selection_paths']
     game_started = req_data['game_started']
     menu_data = req_data.get('menu', {})  # The complete menu data
     answers = []
