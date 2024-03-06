@@ -89,20 +89,20 @@ def process_data():
 
     if len(pendingcat1) == len(pending_categories):
         gameStage = "dishPicker"
-        #selection_paths = convert_selection_paths(selection_paths) ## CAMBIAR A SOLO CUANDO VA A DISHPICKER
-        #terminal_paths = filter_complete_paths(selection_paths)
-        # Traverse each path to find and accumulate the corresponding items
-        #for path in terminal_paths:
-        #    current_section = menu_data['categories']  # Starting point
-        #    for category in path:
-        #        if category in current_section:
-        #            current_section = current_section[category]
-        #        else:
-        #            # If any part of the path is not found, skip to the next path
-        #            current_section = None
-        #            break
-        #    if current_section and 'items' in current_section:
-        #        filtered_items.extend(current_section['items'])
+        selection_paths = convert_selection_paths(selection_paths) ## CAMBIAR A SOLO CUANDO VA A DISHPICKER
+        terminal_paths = filter_complete_paths(selection_paths)
+         Traverse each path to find and accumulate the corresponding items
+        for path in terminal_paths:
+            current_section = menu_data['categories']  # Starting point
+            for category in path:
+                if category in current_section:
+                    current_section = current_section[category]
+                else:
+                    # If any part of the path is not found, skip to the next path
+                    current_section = None
+                    break
+            if current_section and 'items' in current_section:
+                filtered_items.extend(current_section['items'])
 
     return jsonify({
         "gameStage": gameStage,
