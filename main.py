@@ -49,10 +49,10 @@ def process_data():
     gameStage = req_data['gameStage']
     pickedCats = req_data['pickedCats']
     pendingcat1 = req_data['pendingcat1']
-    selection_paths = convert_selection_paths(selection_paths) ## CAMBIAR A SOLO CUANDO VA A DISHPICKER
     pendingCategories = req_data['pendingCategories']
     userInput = req_data['userInput']
     selection_paths = req_data.get('selection_paths', [])
+    selection_paths = convert_selection_paths(selection_paths) ## CAMBIAR A SOLO CUANDO VA A DISHPICKER
     game_started = req_data['game_started']
     menu_data = req_data.get('menu', {})  # The complete menu data
     answers = []
