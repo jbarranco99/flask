@@ -71,17 +71,17 @@ def process_data():
         results = find_levels(data, userInput)
         filtered_results = [result for result in results if result[0] == 'Key']
 
-        for result in filtered_results:
-            _, value, path = result
-            full_path = path + [value, 'names']
-            current_answers = get_value(data, full_path)
-            if current_answers is not None:
-                if isinstance(current_answers, list):
-                    answers.extend(current_answers)
-                else:
-                    answers.append(current_answers)
-                # Update selection_paths with the current path
-                selection_paths.append(full_path[:-1])  # Exclude 'names' from the path
+    for result in filtered_results:
+        _, value, path = result
+        full_path = path + [value, 'names']
+        current_answers = get_value(data, full_path)
+        if current_answers is not None:
+            if isinstance(current_answers, list):
+                answers.extend(current_answers)
+            else:
+                answers.append(current_answers)
+            # Update selection_paths with the current path
+            selection_paths.append(full_path[:-1])  # Exclude 'names' from the path
 
     # Combine allowed values: pendingcat1, user_input, and answers
     allowed_values = set(pendingcat1 + answers)
