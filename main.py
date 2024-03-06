@@ -80,6 +80,7 @@ def process_data():
                     answers.append(current_answers)
                 # Update selection_paths with the current path
                 selection_paths.append(full_path[:-1])  # Exclude 'names' from the path
+                selection_paths = paths_to_string(selection_paths, delimiter='/')  # or use '.' as your delimiter
 
     # Combine allowed values: pendingcat1, user_input, and answers
     allowed_values = set(pendingcat1 + answers)
@@ -165,6 +166,20 @@ def convert_selection_paths(input_paths):
         clean_elements = [element.strip("'") for element in path_elements]
         converted_paths.append(clean_elements)
     return converted_paths
+
+def paths_to_string(paths, delimiter='/'):
+    """
+    Convert each path in paths to a string using the given delimiter.
+    :param paths: A list of paths, where each path is a list of keys.
+    :param delimiter: The delimiter to use for joining keys in a path.
+    :return: A list of strings, where each string represents a path.
+    """
+    return [delimiter.join(map(str, path)) for path in paths]
+
+# Step 2: Use the function before returning the response in your `process_data` function
+# For example, right before returning jsonify in the `process_data` function:
+
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)
