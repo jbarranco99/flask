@@ -51,7 +51,7 @@ def process_data():
     pendingcat1 = req_data['pendingcat1']
     pendingCategories = req_data['pendingCategories']
     userInput = req_data['userInput']
-    selection_paths = req_data.get('selection_paths', {})
+    selection_paths = req_data.get('selection_paths', [])
     game_started = req_data['game_started']
     menu_data = req_data.get('menu', {})  # The complete menu data
     answers = []
@@ -103,10 +103,6 @@ def process_data():
             if current_section and 'items' in current_section:
                 filtered_items.extend(current_section['items'])
 
-
-    if selection_paths is None:
-        selection_paths = []
-    
     return jsonify({
         "gameStage": gameStage,
         "answers": answers,
