@@ -66,22 +66,22 @@ def process_data():
         answers = get_value(data, ['subcategories', pendingcat1[0], 'names'])
         pendingcat1.pop(0)
         pendingCategories.extend(answers)
-        
+
     else:
         results = find_levels(data, userInput)
         filtered_results = [result for result in results if result[0] == 'Key']
 
-    for result in filtered_results:
-        _, value, path = result
-        full_path = path + [value, 'names']
-        current_answers = get_value(data, full_path)
-        if current_answers is not None:
-            if isinstance(current_answers, list):
-                answers.extend(current_answers)
-            else:
-                answers.append(current_answers)
-            # Update selection_paths with the current path
-            selection_paths.append(full_path[:-1])  # Exclude 'names' from the path
+        for result in filtered_results:
+            _, value, path = result
+            full_path = path + [value, 'names']
+            current_answers = get_value(data, full_path)
+            if current_answers is not None:
+                if isinstance(current_answers, list):
+                    answers.extend(current_answers)
+                else:
+                    answers.append(current_answers)
+                # Update selection_paths with the current path
+                selection_paths.append(full_path[:-1])  # Exclude 'names' from the path
 
     # Combine allowed values: pendingcat1, user_input, and answers
     allowed_values = set(pendingcat1 + answers)
@@ -92,7 +92,7 @@ def process_data():
     if len(pendingcat1) == len(pending_categories):
         gameStage = "dishPicker"
         terminal_paths = filter_complete_paths(selection_paths)
-        #Traverse each path to find and accumulate the corresponding items
+        # Traverse each path to find and accumulate the corresponding items
         # Assuming 'menu_data' is your complete menu structure
         # and 'terminal_paths' are the paths you've determined to traverse:
         for path in terminal_paths:
@@ -106,10 +106,9 @@ def process_data():
             items = find_items(current_section) if current_section else None
             if items:
                 filtered_items.extend(items)
-        
 
     selection_paths_strings = paths_to_string(selection_paths, delimiter='/')
-    
+
     return jsonify({
         "gameStage": gameStage,
         "answers": answers,
@@ -119,6 +118,7 @@ def process_data():
         "game_started": game_started,
         "filtered_items": filtered_items
     })
+
 
 def filter_complete_paths(paths):
     simplified_paths = [[item for item in path if item.lower() != "subcategories"] for path in paths]
@@ -162,6 +162,7 @@ def is_prefix(path, other_path):
         return False
     return all(path[i] == other_path[i] for i in range(len(path)))
 
+
 def convert_selection_paths(input_paths):
     converted_paths = []
     for path_str in input_paths:
@@ -172,17 +173,20 @@ def convert_selection_paths(input_paths):
         converted_paths.append(clean_elements)
     return converted_paths
 
+
 def string_paths_to_lists(string_paths, delimiter='/'):
     """
     Convert a list of string paths to a list of lists of keys.
     """
     return [path.split(delimiter) for path in string_paths]
 
+
 def paths_to_string(paths, delimiter='/'):
     """
     Convert each path in paths to a string using the given delimiter.
     """
     return [delimiter.join(path) for path in paths]
+
 
 def find_items(current_section):
     if 'items' in current_section:
