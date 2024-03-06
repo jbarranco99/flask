@@ -52,6 +52,7 @@ def process_data():
     pendingCategories = req_data['pendingCategories']
     userInput = req_data['userInput']
     selection_paths = req_data.get('selection_paths', [])
+    selection_paths = convert_selection_paths(selection_paths)
     game_started = req_data['game_started']
     menu_data = req_data.get('menu', {})  # The complete menu data
     answers = []
@@ -154,6 +155,27 @@ def is_prefix(path, other_path):
     if len(path) >= len(other_path):
         return False
     return all(path[i] == other_path[i] for i in range(len(path)))
+
+
+def convert_selection_paths(input_paths):
+    """
+    Convert string representations of paths into lists of strings.
+
+    Args:
+        input_paths (list of str): List of string representations of paths.
+
+    Returns:
+        list of list of str: List of lists containing path segments.
+    """
+    converted_paths = []
+    for path_str in input_paths:
+        # Remove the brackets at the beginning and the end, then split by ', '
+        path_elements = path_str[1:-1].split(", ")
+        # Trim the extra quotes from each element and keep the structure
+        clean_elements = [element.strip("'") for element in path_elements]
+        converted_paths.append(clean_elements)
+    return converted_paths
+
 
 
 if __name__ == '__main__':
