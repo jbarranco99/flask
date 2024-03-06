@@ -89,6 +89,7 @@ def process_data():
 
     if len(pendingcat1) == len(pending_categories):
         gameStage = "dishPicker"
+        selection_paths = convert_selection_paths(selection_paths) ## CAMBIAR A SOLO CUANDO VA A DISHPICKER
         terminal_paths = filter_complete_paths(selection_paths)
         # Traverse each path to find and accumulate the corresponding items
         for path in terminal_paths:
@@ -155,6 +156,15 @@ def is_prefix(path, other_path):
         return False
     return all(path[i] == other_path[i] for i in range(len(path)))
 
+def convert_selection_paths(input_paths):
+    converted_paths = []
+    for path_str in input_paths:
+        # Remove the brackets at the beginning and the end, then split by ', '
+        path_elements = path_str[1:-1].split(", ")
+        # Trim the extra quotes from each element and keep the structure
+        clean_elements = [element.strip("'") for element in path_elements]
+        converted_paths.append(clean_elements)
+    return converted_paths
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)
