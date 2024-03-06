@@ -52,7 +52,7 @@ def process_data():
     pendingCategories = req_data['pendingCategories']
     userInput = req_data['userInput']
     selection_paths = req_data['selection_paths']
-    selection_paths = string_paths_to_lists(string_paths, delimiter='/')
+    selection_paths = string_paths_to_lists(selection_paths, delimiter='/')
     game_started = req_data['game_started']
     menu_data = req_data.get('menu', {})  # The complete menu data
     answers = []
