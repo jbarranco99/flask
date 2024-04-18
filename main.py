@@ -35,16 +35,15 @@ def paths_to_string(paths, delimiter='/'):
 def filter_complete_paths(paths):
     simplified_paths = [[item for item in path if item.lower() != "subcategories"] for path in paths]
     complete_paths = filter_paths_with_all_ancestors(simplified_paths)
-    terminal_paths = filter_for_terminal_paths(complete_paths)
-    return terminal_paths
+    return complete_paths
 
 
 def filter_paths_with_all_ancestors(simplified_paths):
     paths_as_tuples_set = set(tuple(path) for path in simplified_paths)
     complete_paths_tuples = [path for path in paths_as_tuples_set if
-                             immediate_ancestor_present(path, paths_as_tuples_set)]
+                             all(tuple(path[:i+1]) in paths_as_tuples_set for i in range(len(path)))]
     complete_paths_lists = [list(path) for path in complete_paths_tuples]
-    return ensure_base_paths(complete_paths_lists)
+    return complete_paths_lists
 
 
 def immediate_ancestor_present(path, all_paths_set):
@@ -184,11 +183,11 @@ def process_data():
     # Update pending_categories to include only allowed values, and add new answers to the start
     pending_categories = [item for item in answers + pendingcat1]
 
-    if len(pendingcat1) == 0 and len(pending_categories) == 0:
+   if len(pendingcat1) == 0 and len(pending_categories) == 0:
         gameStage = "dishPicker"
-        terminal_paths = filter_complete_paths(selection_paths)
+        complete_paths = filter_complete_paths(selection_paths)
         # Traverse each path to find and accumulate the corresponding items
-        for path in terminal_paths:
+        for path in complete_paths:
             current_section = menu_data['categories']['categories']  # Starting point for traversal
             for category in path:
                 if category in current_section:
