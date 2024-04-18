@@ -37,13 +37,49 @@ def find_levels(data, target_values, current_path=None, results=None):
 
 @app.route('/menuToFullTree', methods=['POST'])
 def menuToFullTree():
-    # Parse JSON from the request
-    req_data = request.get_json()
-    queryMenu = req_data['queryMenu']
+def menuToFullTree():
+    try:
+        req_data = request.get_json()
+        menu_items = req_data['queryMenu']
 
-    return jsonify({
-        "queryMenu": queryMenu
-    })
+        # Initialize the categories dictionary
+        categories = {}
+
+        # Iterate through the menu items and build the categories
+        for item in menu_items:
+            for i in range(1, 6):
+                category = item.get(f'category{i}')
+                if category:
+                    if category not in categories:
+                        categories[category] = {}
+
+                    for j in range(i + 1, 6):
+                        sub_category = item.get(f'category{j}')
+                        if sub_category:
+                            if sub_category not in categories[category]:
+                                categories[category][sub_category] = {
+                                    'items': []
+                                }
+
+                            menu_item = {
+                                'name': item['name'],
+                                'price': item['price'],
+                                'vegan': item['vegan'] == 'TRUE',
+                                'vegetarian': item['vegetarian'] == 'TRUE',
+                                'description': item['description'],
+                                'gluten_free': item['gluten_free'] == 'TRUE',
+                                'restaurant_id': item['restaurant_id']
+                            }
+
+                            categories[category][sub_category]['items'].append(menu_item)
+                            break
+
+        return jsonify({
+            'categories': categories
+        })
+
+    except (KeyError, TypeError):
+        return jsonify({'error': 'Invalid input data'}), 400
 
 @app.route('/')
 def index():
