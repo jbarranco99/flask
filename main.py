@@ -37,7 +37,6 @@ def find_levels(data, target_values, current_path=None, results=None):
 
 @app.route('/menuToFullTree', methods=['POST'])
 def menuToFullTree():
-def menuToFullTree():
     try:
         req_data = request.get_json()
         menu_items = req_data['queryMenu']
