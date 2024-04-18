@@ -22,18 +22,18 @@ def find_levels(data, target_values, current_path=None, results=None):
     if current_path is None:
         current_path = []
     if results is None:
-        results = set()  # Use a set instead of a list
+        results = set()
     if isinstance(data, dict):
         for key, value in data.items():
             if key in target_values:
-                results.add(('Key', key, tuple(current_path)))  # Convert path to tuple for hashability
+                results.add(('Key', key, tuple(current_path)))  # Convert path to tuple
             find_levels(value, target_values, current_path + [key], results)
     elif isinstance(data, list):
         for index, item in enumerate(data):
             if item in target_values:
-                results.add(('Value', item, tuple(current_path + [str(index)])))  # Convert path to tuple for hashability
+                results.add(('Value', item, tuple(current_path + [str(index)])))  # Convert path to tuple
             find_levels(item, target_values, current_path + [str(index)], results)
-    return list(results)  # Convert the set back to a list before returning
+    return list(results)
 
 
 @app.route('/menuToFullTree', methods=['POST'])
@@ -141,7 +141,7 @@ def process_data():
         unique_answers = set()
         for result in filtered_results:
             _, value, path = result
-            full_path = path + [value, 'names']
+            full_path = list(path) + [value, 'names']
             current_answers = get_value(data, full_path)
             if current_answers is not None:
                 if isinstance(current_answers, list):
