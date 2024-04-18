@@ -122,38 +122,45 @@ def process_data():
         pendingcat1 = [cat for cat in pickedCats if cat in data['names']]
         game_started = 1
 
-    if len(pendingcat1) > 0:
-        current_category = pendingcat1[0]
-        current_path = selection_paths[-1] + [current_category]
-        answers = get_value(data, current_path + ['names'])
+    if len(pendingcat1) >= len(pendingCategories):
+        answers = get_value(data, ['subcategories', pendingcat1[0], 'names'])
 
-        selection_paths.append(current_path)
+        selection_path = ['subcategories', pendingcat1[0]]
+        selection_paths.append(selection_path)
         
         pendingcat1.pop(0)
-        pendingCategories.extend(answers if answers else [])
+        pendingCategories.extend(answers)
         
+
+
     else:
-        for category in userInput:
-            current_path = selection_paths[-1] + [category]
-            current_answers = get_value(data, current_path + ['names'])
+        results = find_levels(data, userInput)
+        filtered_results = [result for result in results if result[0] == 'Key']
+
+        for result in filtered_results:
+            _, value, path = result
+            full_path = path + [value, 'names']
+            current_answers = get_value(data, full_path)
             if current_answers is not None:
                 if isinstance(current_answers, list):
                     answers.extend(current_answers)
                 else:
                     answers.append(current_answers)
-                selection_paths.append(current_path)
-                pendingCategories.extend(current_answers if current_answers else [])
+                # Update selection_paths with the current path
+                selection_paths.append(full_path[:-1])  # Exclude 'names' from the path
 
     # Combine allowed values: pendingcat1, user_input, and answers
-    allowed_values = set(pendingcat1 + userInput + answers)
+    allowed_values = set(pendingcat1 + answers)
 
-    # Update pending_categories to include only allowed values
-    pending_categories = [item for item in pending_categories if item in allowed_values]
+    # Update pending_categories to include only allowed values, and add new answers to the start
+    pending_categories = [item for item in answers + pendingcat1]
 
-    if len(pendingcat1) == 0 and len(pending_categories) == 0:
+    if len(pendingcat1) == len(pending_categories):
         gameStage = "dishPicker"
         terminal_paths = filter_complete_paths(selection_paths)
         # Traverse each path to find and accumulate the corresponding items
+        # Assuming 'menu_data' is your complete menu structure
+        # and 'terminal_paths' are the paths you've determined to traverse:
         for path in terminal_paths:
             current_section = menu_data['categories']  # Starting point for traversal
             for category in path:
