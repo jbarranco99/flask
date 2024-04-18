@@ -122,7 +122,7 @@ def process_data():
         pendingcat1 = [cat for cat in pickedCats if cat in data['names']]
         game_started = 1
 
-    if len(pendingcat1) >= len(pendingCategories):
+    if len(pendingcat1) > 0:
         current_category = pendingcat1[0]
         current_path = selection_paths[-1] + [current_category]
         answers = get_value(data, current_path + ['names'])
@@ -130,7 +130,7 @@ def process_data():
         selection_paths.append(current_path)
         
         pendingcat1.pop(0)
-        pendingCategories.extend(answers)
+        pendingCategories.extend(answers if answers else [])
         
     else:
         for category in userInput:
@@ -142,14 +142,15 @@ def process_data():
                 else:
                     answers.append(current_answers)
                 selection_paths.append(current_path)
+                pendingCategories.extend(current_answers if current_answers else [])
 
     # Combine allowed values: pendingcat1, user_input, and answers
-    allowed_values = set(pendingcat1 + answers)
+    allowed_values = set(pendingcat1 + userInput + answers)
 
-    # Update pending_categories to include only allowed values, and add new answers to the start
-    pending_categories = [item for item in answers + pendingcat1]
+    # Update pending_categories to include only allowed values
+    pending_categories = [item for item in pending_categories if item in allowed_values]
 
-    if len(pendingcat1) == len(pending_categories):
+    if len(pendingcat1) == 0 and len(pending_categories) == 0:
         gameStage = "dishPicker"
         terminal_paths = filter_complete_paths(selection_paths)
         # Traverse each path to find and accumulate the corresponding items
