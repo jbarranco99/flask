@@ -150,7 +150,6 @@ def process_data():
     pendingCategories = req_data['pendingCategories']
     userInput = req_data['userInput']
     selection_paths = req_data['selection_paths']
-    selection_paths = string_paths_to_lists(selection_paths, delimiter='/')
     game_started = req_data['game_started']
     menu_data = req_data.get('menu', {})  # The complete menu data
     answers = []
@@ -174,7 +173,7 @@ def process_data():
             current_answers = get_value(data, ['subcategories', category, 'names'])
             if current_answers:
                 answers.extend(current_answers)
-                selection_path = ['subcategories', category]
+                selection_path = ['subcategories'] + selection_paths[-1][1:] + [category]
                 selection_paths.append(selection_path)
 
     # Combine allowed values: pendingcat1, user_input, and answers
@@ -183,12 +182,12 @@ def process_data():
     # Update pending_categories to include only allowed values, and add new answers to the start
     pending_categories = [item for item in answers + pendingcat1]
 
-   if len(pendingcat1) == 0 and len(pending_categories) == 0:
+    if len(pendingcat1) == 0 and len(pending_categories) == 0:
         gameStage = "dishPicker"
-        complete_paths = filter_complete_paths(selection_paths)
+        complete_paths = [path[1:] for path in selection_paths]
         # Traverse each path to find and accumulate the corresponding items
         for path in complete_paths:
-            current_section = menu_data['categories']['categories']  # Starting point for traversal
+            current_section = menu_data['categories']
             for category in path:
                 if category in current_section:
                     current_section = current_section[category]
@@ -199,14 +198,12 @@ def process_data():
             if items:
                 filtered_items.extend(items)
 
-    selection_paths_strings = paths_to_string(selection_paths, delimiter='/')
-
     return jsonify({
         "gameStage": gameStage,
         "answers": answers,
         "pendingcat1": pendingcat1,
         "pending_categories": pending_categories,
-        "selection_paths": selection_paths_strings,
+        "selection_paths": selection_paths,
         "game_started": game_started,
         "filtered_items": filtered_items
     })
