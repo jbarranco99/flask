@@ -123,31 +123,25 @@ def process_data():
         game_started = 1
 
     if len(pendingcat1) >= len(pendingCategories):
-        answers = get_value(data, ['subcategories', pendingcat1[0], 'names'])
+        current_category = pendingcat1[0]
+        current_path = selection_paths[-1] + [current_category]
+        answers = get_value(data, current_path + ['names'])
 
-        selection_path = ['subcategories', pendingcat1[0]]
-        selection_paths.append(selection_path)
+        selection_paths.append(current_path)
         
         pendingcat1.pop(0)
         pendingCategories.extend(answers)
         
-
-
     else:
-        results = find_levels(data, userInput)
-        filtered_results = [result for result in results if result[0] == 'Key']
-
-        for result in filtered_results:
-            _, value, path = result
-            full_path = path + [value, 'names']
-            current_answers = get_value(data, full_path)
+        for category in userInput:
+            current_path = selection_paths[-1] + [category]
+            current_answers = get_value(data, current_path + ['names'])
             if current_answers is not None:
                 if isinstance(current_answers, list):
                     answers.extend(current_answers)
                 else:
                     answers.append(current_answers)
-                # Update selection_paths with the current path
-                selection_paths.append(full_path[:-1])  # Exclude 'names' from the path
+                selection_paths.append(current_path)
 
     # Combine allowed values: pendingcat1, user_input, and answers
     allowed_values = set(pendingcat1 + answers)
@@ -159,8 +153,6 @@ def process_data():
         gameStage = "dishPicker"
         terminal_paths = filter_complete_paths(selection_paths)
         # Traverse each path to find and accumulate the corresponding items
-        # Assuming 'menu_data' is your complete menu structure
-        # and 'terminal_paths' are the paths you've determined to traverse:
         for path in terminal_paths:
             current_section = menu_data['categories']  # Starting point for traversal
             for category in path:
