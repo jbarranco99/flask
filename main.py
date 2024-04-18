@@ -120,17 +120,21 @@ def process_data():
                 pendingCategories.extend(current_answers)
 
     # Filter the pending categories based on the user's input and retrieved answers
-    pending_categories = [category for category in pendingCategories if category in answers]
+    pending_categories = [category for category in pendingCategories if category in userInput]
 
     if len(pendingcat1) == 0 and len(pending_categories) == 0:
         gameStage = "dishPicker"
         # Retrieve filtered items based on the selection paths
         for path in selection_paths:
-            current_section = get_value(menu_data, path)
-            if current_section is not None:
-                items = find_items(current_section)
-                if items is not None:
-                    filtered_items.extend(items)
+            current_section = menu_data['categories']
+            for category in path[1:]:  # Skip the first element 'subcategories'
+                if category in current_section:
+                    current_section = current_section[category]
+                else:
+                    current_section = None
+                    break
+            if current_section is not None and 'items' in current_section:
+                filtered_items.extend(current_section['items'])
 
     selection_paths_strings = paths_to_string(selection_paths, delimiter='/')
 
