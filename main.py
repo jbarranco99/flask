@@ -43,16 +43,30 @@ def menuToFullTree():
 
         # Initialize the categories dictionary
         categories = {}
+        category_map = {
+            "names": [],
+            "subcategories": {}
+        }
 
         # Iterate through the menu items and build the categories
         for item in menu_items:
             current_category = categories
+            current_category_map = category_map
             for i in range(1, 6):
                 category = item.get(f'category{i}')
                 if category:
                     if category not in current_category:
                         current_category[category] = {}
                     current_category = current_category[category]
+
+                    if category not in current_category_map["names"]:
+                        current_category_map["names"].append(category)
+                    if category not in current_category_map["subcategories"]:
+                        current_category_map["subcategories"][category] = {
+                            "names": [],
+                            "subcategories": {}
+                        }
+                    current_category_map = current_category_map["subcategories"][category]
                 else:
                     break
 
@@ -72,7 +86,8 @@ def menuToFullTree():
             current_category['items'].append(menu_item)
 
         return jsonify({
-            'categories': categories
+            'categories': categories,
+            'categoryMap': category_map
         })
 
     except (KeyError, TypeError):
