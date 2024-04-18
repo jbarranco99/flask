@@ -46,32 +46,30 @@ def menuToFullTree():
 
         # Iterate through the menu items and build the categories
         for item in menu_items:
+            current_category = categories
             for i in range(1, 6):
                 category = item.get(f'category{i}')
                 if category:
-                    if category not in categories:
-                        categories[category] = {}
+                    if category not in current_category:
+                        current_category[category] = {}
+                    current_category = current_category[category]
+                else:
+                    break
 
-                    for j in range(i + 1, 6):
-                        sub_category = item.get(f'category{j}')
-                        if sub_category:
-                            if sub_category not in categories[category]:
-                                categories[category][sub_category] = {
-                                    'items': []
-                                }
+            if 'items' not in current_category:
+                current_category['items'] = []
 
-                            menu_item = {
-                                'name': item['name'],
-                                'price': item['price'],
-                                'vegan': item['vegan'] == 'TRUE',
-                                'vegetarian': item['vegetarian'] == 'TRUE',
-                                'description': item['description'],
-                                'gluten_free': item['gluten_free'] == 'TRUE',
-                                'restaurant_id': item['restaurant_id']
-                            }
+            menu_item = {
+                'name': item['name'],
+                'price': item['price'],
+                'vegan': item['vegan'] == 'TRUE',
+                'vegetarian': item['vegetarian'] == 'TRUE',
+                'description': item['description'],
+                'gluten_free': item['gluten_free'] == 'TRUE',
+                'restaurant_id': item['restaurant_id']
+            }
 
-                            categories[category][sub_category]['items'].append(menu_item)
-                            break
+            current_category['items'].append(menu_item)
 
         return jsonify({
             'categories': categories
