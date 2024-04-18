@@ -159,10 +159,11 @@ def process_data():
         pendingcat1 = [cat for cat in pickedCats if cat in data['names']]
         game_started = 1
 
-    if len(pendingcat1) >= len(pendingCategories):
-        answers = get_value(data, ['subcategories', pendingcat1[0], 'names'])
+    if len(pendingcat1) > 0:
+        current_category = pendingcat1[0]
+        answers = get_value(data, ['subcategories', current_category, 'names'])
 
-        selection_path = ['subcategories', pendingcat1[0]]
+        selection_path = selection_paths[-1] + [current_category]
         selection_paths.append(selection_path)
         
         pendingcat1.pop(0)
@@ -170,19 +171,14 @@ def process_data():
 
     else:
         for category in userInput:
-            current_answers = get_value(data, ['subcategories', category, 'names'])
+            current_answers = get_value(data, selection_paths[-1] + [category, 'names'])
             if current_answers:
                 answers.extend(current_answers)
-                selection_path = ['subcategories'] + selection_paths[-1][1:] + [category]
+                selection_path = selection_paths[-1] + [category]
                 selection_paths.append(selection_path)
+                pendingCategories.extend(current_answers)
 
-    # Combine allowed values: pendingcat1, user_input, and answers
-    allowed_values = set(pendingcat1 + answers)
-
-    # Update pending_categories to include only allowed values, and add new answers to the start
-    pending_categories = [item for item in answers + pendingcat1]
-
-    if len(pendingcat1) == 0 and len(pending_categories) == 0:
+    if len(pendingcat1) == 0 and len(pendingCategories) == 0:
         gameStage = "dishPicker"
         complete_paths = [path[1:] for path in selection_paths]
         # Traverse each path to find and accumulate the corresponding items
@@ -202,7 +198,7 @@ def process_data():
         "gameStage": gameStage,
         "answers": answers,
         "pendingcat1": pendingcat1,
-        "pending_categories": pending_categories,
+        "pending_categories": pendingCategories,
         "selection_paths": selection_paths,
         "game_started": game_started,
         "filtered_items": filtered_items
