@@ -206,7 +206,7 @@ def find_items(current_section):
 
 
 @app.route('/menuToFullTree', methods=['POST'])
-def process_data():
+def menuToFullTree():
     # Parse JSON from the request
     req_data = request.get_json()
     queryMenu = req_data['queryMenu']
