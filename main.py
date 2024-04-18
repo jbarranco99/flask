@@ -42,9 +42,7 @@ def menuToFullTree():
         menu_items = req_data['queryMenu']
 
         # Initialize the categories dictionary
-        categories = {
-            "categories": {}
-        }
+        categories = {}
         category_map = {
             "names": [],
             "subcategories": {}
@@ -52,7 +50,7 @@ def menuToFullTree():
 
         # Iterate through the menu items and build the categories
         for item in menu_items:
-            current_category = categories["categories"]
+            current_category = categories
             current_category_map = category_map
             for i in range(1, 6):
                 category = item.get(f'category{i}')
@@ -88,15 +86,16 @@ def menuToFullTree():
             current_category['items'].append(menu_item)
 
         response = {
-            'categories': categories["categories"],
-            'categoryMap': category_map
+            'fullMap': {
+                'fullMap': categories,
+                'categoryMap': category_map
+            }
         }
 
         return jsonify(response)
 
     except (KeyError, TypeError):
         return jsonify({'error': 'Invalid input data'}), 400
-
 @app.route('/')
 def index():
     return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
