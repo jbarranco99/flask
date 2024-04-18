@@ -87,7 +87,7 @@ def menuToFullTree():
 
         response = {
             'fullMap': {
-                'fullMap': categories,
+                'categories': categories,
                 'categoryMap': category_map
             }
         }
