@@ -269,7 +269,7 @@ def find_items(current_section):
     return None
 
 
-VERSION = "1.0.7"
+VERSION = "1.0.8"
 
 @app.route('/scoringSystem', methods=['POST'])
 def scoringSystem():
@@ -314,7 +314,8 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
             "dish_name": dish["name"],
             "dietary_restrictions": dietary_restrictions,
             "dish_features": [],
-            "satisfies_restrictions": True
+            "satisfies_restrictions": True,
+            "restriction_checks": []
         }
 
         # Get the dish features
@@ -324,7 +325,21 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
         # Check if the dish satisfies all dietary restrictions
         for restriction in dietary_restrictions:
             restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower() == restriction), None)
-            if not restriction_feature or restriction_feature['value'].lower() != 'true':
+            
+            if restriction_feature:
+                dish_debug_info["restriction_checks"].append({
+                    "restriction": restriction,
+                    "feature_value": restriction_feature['value']
+                })
+                
+                if restriction_feature['value'].lower() != 'true':
+                    dish_debug_info["satisfies_restrictions"] = False
+                    break
+            else:
+                dish_debug_info["restriction_checks"].append({
+                    "restriction": restriction,
+                    "feature_value": "NOT FOUND"
+                })
                 dish_debug_info["satisfies_restrictions"] = False
                 break
 
