@@ -355,7 +355,8 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
         dish_debug = {
             'dish_id': dish_id,
             'dish_name': dish['name'],
-            'features': []
+            'features': [],
+            'processing_steps': []  # To store detailed step-by-step processing info
         }
 
         # Process each 'soft' question and calculate scores
@@ -366,6 +367,11 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
 
             # Get choices linked to this particular 'soft' question
             choices_for_question = [choice for choice in question_choices if choice['question_id'] == question_id]
+            dish_debug['processing_steps'].append({
+                'step': 'Fetch choices',
+                'question_id': question_id,
+                'choices': choices_for_question
+            })
 
             # Iterate over these choices and match them with dish features
             for choice in choices_for_question:
@@ -391,6 +397,15 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                         'feature_name': choice['text'],
                         'feature_value': 'NOT FOUND'
                     })
+                    dish_debug['processing_steps'].append({
+                        'step': 'Feature lookup failure',
+                        'feature_id': feature_id,
+                        'expected_feature': {
+                            'id': feature_id,
+                            'dish_id': dish_id
+                        },
+                        'available_features': [f['id'] for f in dish_features if f['dish_id'] == dish_id]
+                    })
 
             # Ensure both lists have the same length for comparison
             max_length = max(len(user_answer_values), len(dish_feature_values))
@@ -411,7 +426,6 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
     }
 
     return response
-
 
 def convert_value(value):
     try:
