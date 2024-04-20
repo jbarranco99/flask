@@ -306,8 +306,9 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
     # Extract the user's dietary restrictions
     dietary_restrictions = user_input[0]['answer']
 
-    # Get the question ID for the dietary restrictions
-    dietary_question_id = user_input[0]['question_id']
+    # Find the question ID for the dietary restrictions question
+    dietary_question = next((q for q in all_questions if q['type'] == 'hard'), None)
+    dietary_question_id = dietary_question['id'] if dietary_question else None
 
     # Get the feature IDs for the dietary restrictions
     dietary_feature_ids = [choice['feature_id'] for choice in question_choices if choice['question_id'] == dietary_question_id and choice['text'] in dietary_restrictions]
