@@ -314,7 +314,7 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
             "dish_name": dish["name"],
             "dietary_restrictions": dietary_restrictions,
             "dish_features": [],
-            "satisfies_restrictions": False
+            "satisfies_restrictions": True
         }
 
         # Get the dish features
@@ -322,15 +322,14 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
         dish_debug_info["dish_features"] = dish_features_filtered
 
         # Check if the dish satisfies all dietary restrictions
-        satisfies_restrictions = all(
-            any(feature['feature'].lower() == restriction and feature['value'].lower() == 'true' for feature in dish_features_filtered)
-            for restriction in dietary_restrictions
-        )
-        dish_debug_info["satisfies_restrictions"] = satisfies_restrictions
+        for restriction in dietary_restrictions:
+            if not any(feature['feature'].lower() == restriction and feature['value'].lower() == 'true' for feature in dish_features_filtered):
+                dish_debug_info["satisfies_restrictions"] = False
+                break
 
         debug_info.append(dish_debug_info)
 
-        if satisfies_restrictions:
+        if dish_debug_info["satisfies_restrictions"]:
             filtered_menu.append(dish)
 
     return filtered_menu, debug_info
