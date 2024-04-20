@@ -344,30 +344,37 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
 
 def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
     scored_dishes = []
-    
+
     for dish in filtered_menu:
         dish_score = 0
-        
+
         for user_answer in user_input:
             if user_answer['question_type'] == 'soft':
                 question = next((q for q in all_questions if q['id'] == user_answer['question_id']), None)
                 if question:
                     choice_ids = [c['id'] for c in question_choices if c['question_id'] == question['id']]
                     user_answer_values = [int(a) for a in user_answer['answer']]
-                    dish_feature_values = [convert_value(f['value']) for f in dish_features if f['id'] in choice_ids and f['dish_id'] == dish['id']]
-                    
+                    dish_feature_values = []
+
+                    for choice_id in choice_ids:
+                        feature = next((f for f in dish_features if f['id'] == choice_id and f['dish_id'] == dish['id']), None)
+                        if feature:
+                            dish_feature_values.append(convert_value(feature['value']))
+                        else:
+                            dish_feature_values.append(0)
+
                     # Pad the shorter list with zeros
                     max_length = max(len(user_answer_values), len(dish_feature_values))
                     user_answer_values.extend([0] * (max_length - len(user_answer_values)))
                     dish_feature_values.extend([0] * (max_length - len(dish_feature_values)))
-                    
+
                     for i in range(max_length):
                         dish_score += abs(user_answer_values[i] - dish_feature_values[i])
-        
+
         scored_dish = dish.copy()
         scored_dish['score'] = dish_score
         scored_dishes.append(scored_dish)
-    
+
     return scored_dishes
 
 def convert_value(value):
