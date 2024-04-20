@@ -289,28 +289,49 @@ def scoringSystem():
 
 def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features):
     filtered_menu = []
+    debug_info = []  # Collect debug information
 
-    # Filter dishes based on 'hard' questions matching features
     for dish in full_menu:
         keep_dish = True
+        dish_debug = {
+            'dish_name': dish['name'],
+            'checks': []
+        }
+
         for user_answer in user_input:
             if user_answer['question_type'] == 'hard':
                 question = next((q for q in all_questions if q['id'] == user_answer['question_id']), None)
                 if question:
-                    # Ensure that all user's answers have corresponding features set to "TRUE"
-                    required_feature_ids = [choice['feature_id'] for choice in question_choices if choice['question_id'] == question['id'] and choice['text'].lower() in [a.lower() for a in user_answer['answer']]]
-                    for feature_id in required_feature_ids:
-                        feature = next((f for f in dish_features if f['dish_id'] == dish['id'] and f['id'] == feature_id), None)
-                        if not feature or feature['value'].lower() != 'true':
+                    required_features = [
+                        choice for choice in question_choices
+                        if choice['question_id'] == question['id'] and
+                           any(ans.lower() == choice['text'].lower() for ans in user_answer['answer'])
+                    ]
+
+                    # Fetch dish features relevant to the question
+                    dish_features_map = {f['feature']: convert_value(f['value']) for f in dish_features if f['dish_id'] == dish['id']}
+                    
+                    for feature in required_features:
+                        feature_text = feature['text'].lower().replace(" ", "_")  # Assuming feature text matches dish feature keys
+                        required_value = True  # Assume that the requirement for boolean conditions is TRUE
+                        actual_value = dish_features_map.get(feature_text, False)  # Defaults to False if not found
+
+                        # Append debug information for each feature check
+                        dish_debug['checks'].append({
+                            'feature': feature_text,
+                            'required_value': required_value,
+                            'actual_value': actual_value,
+                            'passed': actual_value == required_value
+                        })
+                        
+                        if actual_value != required_value:
                             keep_dish = False
                             break
-            if not keep_dish:
-                break
-
         if keep_dish:
             filtered_menu.append(dish)
+        debug_info.append(dish_debug)
 
-    return filtered_menu
+    return filtered_menu, debug_info
 
 
 def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
