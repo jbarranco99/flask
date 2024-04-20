@@ -268,6 +268,7 @@ def find_items(current_section):
                 return items
     return None
 
+
 @app.route('/scoringSystem', methods=['POST'])
 def scoringSystem():
     data = request.get_json()
@@ -341,5 +342,7 @@ def convert_value(value):
         return int(value)
     except ValueError:
         return 0 # Default to 0 if conversion fails
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)
