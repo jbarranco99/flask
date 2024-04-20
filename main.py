@@ -307,15 +307,18 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
             if user_answer['question_type'] == 'hard':
                 question = next((q for q in all_questions if q['id'] == user_answer['question_id']), None)
                 if question:
-                    required_feature_values = [choice['text'].lower() for choice in question_choices if choice['text'].lower() in [a.lower() for a in user_answer['answer']]]
-                    # Check if dish has the required feature values
-                    dish_feature_values = [f['value'].upper() for f in dish_features if f['dish_id'] == dish['id']]
-                    if not all(value.upper() in dish_feature_values for value in required_feature_values):
+                    # Use IDs to filter question choices related to the question
+                    required_feature_ids = [choice['feature_id'] for choice in question_choices if choice['question_id'] == question['id'] and choice['text'].lower() in [a.lower() for a in user_answer['answer']]]
+                    # Get feature values for this dish
+                    dish_feature_ids = [f['id'] for f in dish_features if f['dish_id'] == dish['id'] and f['id'] in required_feature_ids]
+                    # Check if all required feature IDs are present in the dish's features
+                    if not all(fid in dish_feature_ids for fid in required_feature_ids):
                         keep_dish = False
                         break
         if keep_dish:
             filtered_menu.append(dish)
     return filtered_menu
+
 
 def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
     scored_dishes = []
