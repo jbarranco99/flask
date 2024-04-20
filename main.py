@@ -269,7 +269,7 @@ def find_items(current_section):
     return None
 
 
-VERSION = "1.0.8"
+VERSION = "1.0.9"
 
 @app.route('/scoringSystem', methods=['POST'])
 def scoringSystem():
@@ -304,7 +304,13 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
     debug_info = []
 
     # Extract the user's dietary restrictions
-    dietary_restrictions = [restriction.lower() for restriction in user_input[0]['answer']]
+    dietary_restrictions = user_input[0]['answer']
+
+    # Get the question ID for the dietary restrictions
+    dietary_question_id = user_input[0]['question_id']
+
+    # Get the feature IDs for the dietary restrictions
+    dietary_feature_ids = [choice['feature_id'] for choice in question_choices if choice['question_id'] == dietary_question_id and choice['text'] in dietary_restrictions]
 
     # Filter dishes based on dietary restrictions
     for dish in full_menu:
@@ -323,21 +329,21 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
         dish_debug_info["dish_features"] = dish_features_filtered
 
         # Check if the dish satisfies all dietary restrictions
-        for restriction in dietary_restrictions:
-            restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower() == restriction), None)
-            
+        for feature_id in dietary_feature_ids:
+            restriction_feature = next((feature for feature in dish_features_filtered if feature['id'] == feature_id), None)
+
             if restriction_feature:
                 dish_debug_info["restriction_checks"].append({
-                    "restriction": restriction,
+                    "restriction": next((choice['text'] for choice in question_choices if choice['feature_id'] == feature_id), ""),
                     "feature_value": restriction_feature['value']
                 })
-                
+
                 if restriction_feature['value'].lower() != 'true':
                     dish_debug_info["satisfies_restrictions"] = False
                     break
             else:
                 dish_debug_info["restriction_checks"].append({
-                    "restriction": restriction,
+                    "restriction": next((choice['text'] for choice in question_choices if choice['feature_id'] == feature_id), ""),
                     "feature_value": "NOT FOUND"
                 })
                 dish_debug_info["satisfies_restrictions"] = False
