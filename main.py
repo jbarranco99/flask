@@ -277,7 +277,6 @@ def scoringSystem():
     dish_features = data.get('dishFeatures', [])
     question_choices = data.get('questionChoices', [])
 
-    # Pass all_questions to the calculate_scores function as well
     filtered_menu = filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features)
     scored_dishes = calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions)
 
@@ -293,11 +292,18 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
             if user_answer['question_type'] == 'hard':
                 question = next((q for q in all_questions if q['id'] == user_answer['question_id']), None)
                 if question:
-                    choice_ids = [choice['id'] for choice in question_choices if choice['text'].lower() in [a.lower() for a in user_answer['answer']]]
-                    dish_feature_values = [f['value'] for f in dish_features if f['id'] in choice_ids and f['dish_id'] == dish['id']]
-                    if not any(value.lower() == 'true' for value in dish_feature_values):
-                        keep_dish = False
-                        break
+                    # Collect all choice_ids that match user answers (case insensitive)
+                    choice_ids = [choice['feature_id'] for choice in question_choices if choice['text'].lower() in [a.lower() for a in user_answer['answer']]]
+                    
+                    # Check if dish has all the features specified in user_answers
+                    for choice_id in choice_ids:
+                        dish_feature = next((f for f in dish_features if f['dish_id'] == dish['id'] and f['id'] == choice_id), None)
+                        if not dish_feature or dish_feature['value'].lower() != 'true':
+                            keep_dish = False
+                            break
+            if not keep_dish:
+                break
+
         if keep_dish:
             filtered_menu.append(dish)
 
