@@ -269,7 +269,7 @@ def find_items(current_section):
     return None
 
 
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 
 @app.route('/scoringSystem', methods=['POST'])
 def scoringSystem():
@@ -283,23 +283,11 @@ def scoringSystem():
     filtered_menu = filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features)
     scored_dishes = calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions)
 
-    debug_info = {
-        "input_data": data,
-        "full_menu": full_menu,
-        "filtered_menu": filtered_menu,
-        "scored_dishes": scored_dishes
-    }
-
-    response = {
-        "version": VERSION,
-        "dishes": scored_dishes,
-        "debug_info": debug_info
-    }
-
-    return jsonify(response)
+    return jsonify(scored_dishes)
 
 def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features):
     filtered_menu = []
+
     # Filter dishes based on 'hard' questions matching features
     for dish in full_menu:
         keep_dish = True
@@ -307,24 +295,29 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
             if user_answer['question_type'] == 'hard':
                 question = next((q for q in all_questions if q['id'] == user_answer['question_id']), None)
                 if question:
-                    # Use IDs to filter question choices related to the question
-                    required_feature_ids = [choice['feature_id'] for choice in question_choices if choice['question_id'] == question['id'] and choice['text'].lower() in [a.lower() for a in user_answer['answer']]]
-                    # Get feature values for this dish
-                    dish_feature_ids = [f['id'] for f in dish_features if f['dish_id'] == dish['id'] and f['id'] in required_feature_ids]
-                    # Check if all required feature IDs are present in the dish's features
-                    if not all(fid in dish_feature_ids for fid in required_feature_ids):
-                        keep_dish = False
-                        break
+                    # Collect all feature_ids that match user answers (case insensitive)
+                    feature_ids = [choice['feature_id'] for choice in question_choices if choice['question_id'] == question['id'] and any(choice['text'].lower() == a.lower() for a in user_answer['answer'])]
+
+                    # Check if dish has all the features specified in user_answers as "TRUE"
+                    for feature_id in feature_ids:
+                        feature_entry = next((f for f in dish_features if f['dish_id'] == dish['id'] and f['id'] == feature_id), None)
+                        if not feature_entry or feature_entry['value'].lower() != 'true':
+                            keep_dish = False
+                            break
+            if not keep_dish:
+                break
+
         if keep_dish:
             filtered_menu.append(dish)
-    return filtered_menu
 
+    return filtered_menu
 
 def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
     scored_dishes = []
 
     for dish in filtered_menu:
         dish_score = 0
+
         for user_answer in user_input:
             if user_answer['question_type'] == 'soft':
                 question = next((q for q in all_questions if q['id'] == user_answer['question_id']), None)
@@ -332,13 +325,7 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                     choice_ids = [c['id'] for c in question_choices if c['question_id'] == question['id']]
                     user_answer_values = [int(a) for a in user_answer['answer']]
                     dish_feature_values = [convert_value(f['value']) for f in dish_features if f['id'] in choice_ids and f['dish_id'] == dish['id']]
-
-                    # Pad the shorter list with zeros
-                    max_length = max(len(user_answer_values), len(dish_feature_values))
-                    user_answer_values.extend([0] * (max_length - len(user_answer_values)))
-                    dish_feature_values.extend([0] * (max_length - len(dish_feature_values)))
-
-                    for i in range(max_length):
+                    for i in range(min(len(user_answer_values), len(dish_feature_values))):
                         dish_score += abs(user_answer_values[i] - dish_feature_values[i])
 
         scored_dish = dish.copy()
@@ -355,7 +342,7 @@ def convert_value(value):
             return 0
         return int(value)
     except ValueError:
-        return 0 # Default to 0 if conversion fails
+        return 0  # Default to 0 if conversion fails
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)
