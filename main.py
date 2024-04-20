@@ -300,7 +300,6 @@ def scoringSystem():
 
 def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features):
     filtered_menu = []
-
     # Filter dishes based on 'hard' questions matching features
     for dish in full_menu:
         keep_dish = True
@@ -309,16 +308,13 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
                 question = next((q for q in all_questions if q['id'] == user_answer['question_id']), None)
                 if question:
                     required_feature_values = [choice['text'].lower() for choice in question_choices if choice['text'].lower() in [a.lower() for a in user_answer['answer']]]
-
                     # Check if dish has the required feature values
-                    dish_feature_values = [f['value'].lower() for f in dish_features if f['dish_id'] == dish['id']]
-                    if not all(value in dish_feature_values for value in required_feature_values):
+                    dish_feature_values = [f['value'].upper() for f in dish_features if f['dish_id'] == dish['id']]
+                    if not all(value.upper() in dish_feature_values for value in required_feature_values):
                         keep_dish = False
                         break
-
         if keep_dish:
             filtered_menu.append(dish)
-
     return filtered_menu
 
 def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
