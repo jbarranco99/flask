@@ -373,8 +373,12 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                 feature = next((f for f in dish_features if f['id'] == feature_id and f['dish_id'] == dish_id), None)
 
                 if feature:
-                    converted_value = int(feature['value'])
-                    dish_feature_values.append(converted_value)
+                    # Assuming all values are integers for scoring; adjust if some are booleans or strings
+                    try:
+                        feature_value = int(feature['value'])
+                    except ValueError:
+                        feature_value = 1 if feature['value'].upper() == 'TRUE' else 0
+                    dish_feature_values.append(feature_value)
                     dish_debug['features'].append({
                         'feature_id': feature_id,
                         'feature_name': choice['text'],
@@ -407,7 +411,6 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
     }
 
     return response
-
 
 
 def convert_value(value):
