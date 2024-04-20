@@ -344,10 +344,16 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
 
 def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
     scored_dishes = []
+    debug_info = []
 
     for dish in filtered_menu:
         dish_score = 0
         dish_id = dish['id']
+        dish_debug = {
+            'dish_id': dish_id,
+            'dish_name': dish['name'],
+            'features': []
+        }
 
         for user_answer in user_input:
             if user_answer['question_type'] == 'soft':
@@ -361,8 +367,18 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                             feature = next((f for f in dish_features if f['id'] == choice['feature_id'] and f['dish_id'] == dish_id), None)
                             if feature:
                                 dish_feature_values.append(convert_value(feature['value']))
+                                dish_debug['features'].append({
+                                    'feature_id': feature['id'],
+                                    'feature_name': choice['text'],
+                                    'feature_value': feature['value']
+                                })
                             else:
                                 dish_feature_values.append(0)
+                                dish_debug['features'].append({
+                                    'feature_id': choice['feature_id'],
+                                    'feature_name': choice['text'],
+                                    'feature_value': 'NOT FOUND'
+                                })
 
                     # Pad the shorter list with zeros
                     max_length = max(len(user_answer_values), len(dish_feature_values))
@@ -375,8 +391,14 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
         scored_dish = dish.copy()
         scored_dish['score'] = dish_score
         scored_dishes.append(scored_dish)
+        debug_info.append(dish_debug)
 
-    return scored_dishes
+    response = {
+        "dishes": scored_dishes,
+        "debug_info": debug_info
+    }
+
+    return response
 
 def convert_value(value):
     try:
