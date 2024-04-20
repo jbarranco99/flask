@@ -268,6 +268,70 @@ def find_items(current_section):
                 return items
     return None
 
+@app.route('/scoringSystem', methods=['POST'])
+def scoringSystem():
+    data = request.get_json()
+    full_menu = data.get('fullMenu', [])
+    user_input = data.get('userInput', [])
+    all_questions = data.get('allQuestions', [])
+    dish_features = data.get('dishFeatures', [])
+    question_choices = data.get('questionChoices', [])
+
+    filtered_menu = filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features)
+    scored_dishes = calculate_scores(filtered_menu, user_input, dish_features, question_choices)
+
+    return jsonify(scored_dishes)
+
+def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features):
+    filtered_menu = []
+
+    # Filter dishes based on hard questions
+    for dish in full_menu:
+        keep_dish = True
+        for user_answer in user_input:
+            if user_answer['question_type'] == 'hard':
+                question = next((q for q in all_questions if q['id'] == user_answer['question_id']), None)
+                if question:
+                    choice_ids = [question_choices[c]['id'] for c in question_choices if question_choices[c]['text'].lower() in [a.lower() for a in user_answer['answer']]]
+                    dish_feature_values = [f['value'] for f in dish_features if f['id'] in choice_ids and f['dish_id'] == dish['name'].lower()]
+                    if not any(value.lower() == 'true' for value in dish_feature_values):
+                        keep_dish = False
+                        break
+        if keep_dish:
+            filtered_menu.append(dish)
+
+    return filtered_menu
+
+def calculate_scores(filtered_menu, user_input, dish_features, question_choices):
+    scored_dishes = []
+
+    for dish in filtered_menu:
+        dish_score = 0
+        dish_id = dish['name'].lower()
+
+        for user_answer in user_input:
+            if user_answer['question_type'] == 'soft':
+                question = next((q for q in all_questions if q['id'] == user_answer['question_id']), None)
+                if question:
+                    choice_ids = [c['id'] for c in question_choices if c['question_id'] == question['id']]
+                    user_answer_values = [int(a) for a in user_answer['answer']]
+                    dish_feature_values = [convert_value(f['value']) for f in dish_features if f['id'] in choice_ids and f['dish_id'] == dish_id]
+                    for i in range(len(user_answer_values)):
+                        dish_score += abs(user_answer_values[i] - dish_feature_values[i])
+
+        scored_dish = dish.copy()
+        scored_dish['score'] = dish_score
+        scored_dishes.append(scored_dish)
+
+    return scored_dishes
+
+def convert_value(value):
+    if isinstance(value, str):
+        if value.lower() == 'true':
+            return 1
+        elif value.lower() == 'false':
+            return 0
+    return int(value)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)
