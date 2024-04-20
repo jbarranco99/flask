@@ -346,8 +346,8 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
     scored_dishes = []
     debug_info = []
 
-    # Filter user_input for soft questions
-    soft_questions = [u for u in user_input if u['question_type'] == 'soft']
+    # Extract only the soft questions from user_input
+    soft_questions = [q for q in user_input if q['question_type'] == 'soft']
 
     for dish in filtered_menu:
         dish_score = 0
@@ -358,40 +358,39 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
             'features': []
         }
 
-        for user_answer in soft_questions:
-            question_id = user_answer['question_id']
-            user_answer_values = [int(a) for a in user_answer['answer']]
+        for question in soft_questions:
+            question_id = question['question_id']
+            user_answer_values = [int(a) for a in question['answer']]
+
+            # Filter choices to those matching the current soft question_id
+            relevant_choices = [c for c in question_choices if c['question_id'] == question_id]
             dish_feature_values = []
 
-            # Get the choice IDs for the current soft question
-            choice_ids = [c['feature_id'] for c in question_choices if c['question_id'] == question_id]
+            for choice in relevant_choices:
+                feature_id = choice['feature_id']
+                feature = next((f for f in dish_features if f['id'] == feature_id and f['dish_id'] == dish_id), None)
 
-            # Match the choice IDs with the feature IDs for the current dish
-            for choice_id in choice_ids:
-                feature = next((f for f in dish_features if f['id'] == choice_id and f['dish_id'] == dish_id), None)
                 if feature:
                     dish_feature_values.append(int(feature['value']))
-                    feature_name = next((c['text'] for c in question_choices if c['feature_id'] == choice_id), 'Unknown')
                     dish_debug['features'].append({
                         'feature_id': feature['id'],
-                        'feature_name': feature_name,
+                        'feature_name': choice['text'],
                         'feature_value': feature['value']
                     })
                 else:
                     dish_feature_values.append(0)
-                    feature_name = next((c['text'] for c in question_choices if c['feature_id'] == choice_id), 'Unknown')
                     dish_debug['features'].append({
-                        'feature_id': choice_id,
-                        'feature_name': feature_name,
+                        'feature_id': feature_id,
+                        'feature_name': choice['text'],
                         'feature_value': 'NOT FOUND'
                     })
 
-            # Pad the shorter list with zeros
+            # Pad the shorter list with zeros for comparison
             max_length = max(len(user_answer_values), len(dish_feature_values))
             user_answer_values.extend([0] * (max_length - len(user_answer_values)))
             dish_feature_values.extend([0] * (max_length - len(dish_feature_values)))
 
-            # Compute the score
+            # Calculate score by difference between user preference and dish features
             dish_score += sum(abs(uv - dv) for uv, dv in zip(user_answer_values, dish_feature_values))
 
         scored_dish = dish.copy()
@@ -405,6 +404,7 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
     }
 
     return response
+
 
 
 def convert_value(value):
