@@ -292,13 +292,12 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
             if user_answer['question_type'] == 'hard':
                 question = next((q for q in all_questions if q['id'] == user_answer['question_id']), None)
                 if question:
-                    # Collect all choice_ids that match user answers (case insensitive)
                     choice_ids = [choice['feature_id'] for choice in question_choices if choice['text'].lower() in [a.lower() for a in user_answer['answer']]]
-                    
+
                     # Check if dish has all the features specified in user_answers
                     for choice_id in choice_ids:
-                        dish_feature = next((f for f in dish_features if f['dish_id'] == dish['id'] and f['id'] == choice_id), None)
-                        if not dish_feature or dish_feature['value'].lower() != 'true':
+                        feature_entry = next((f for f in dish_features if f['dish_id'] == dish['id'] and f['id'] == choice_id), None)
+                        if not feature_entry or feature_entry['value'].lower() != 'true':
                             keep_dish = False
                             break
             if not keep_dish:
@@ -340,6 +339,5 @@ def convert_value(value):
         return int(value)
     except ValueError:
         return 0  # Default to 0 if conversion fails
-
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)
