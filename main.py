@@ -310,9 +310,6 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
     dietary_question = next((q for q in all_questions if q['type'] == 'hard'), None)
     dietary_question_id = dietary_question['id'] if dietary_question else None
 
-    # Get the feature IDs for the dietary restrictions
-    dietary_feature_ids = [choice['feature_id'] for choice in question_choices if choice['question_id'] == dietary_question_id and choice['text'] in dietary_restrictions]
-
     # Filter dishes based on dietary restrictions
     for dish in full_menu:
         dish_id = dish['id']
@@ -330,12 +327,12 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
         dish_debug_info["dish_features"] = dish_features_filtered
 
         # Check if the dish satisfies all dietary restrictions
-        for feature_id in dietary_feature_ids:
-            restriction_feature = next((feature for feature in dish_features_filtered if feature['id'] == feature_id), None)
+        for restriction in dietary_restrictions:
+            restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower() == restriction.lower()), None)
 
             if restriction_feature:
                 dish_debug_info["restriction_checks"].append({
-                    "restriction": next((choice['text'] for choice in question_choices if choice['feature_id'] == feature_id), ""),
+                    "restriction": restriction,
                     "feature_value": restriction_feature['value']
                 })
 
@@ -343,7 +340,7 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
                     dish_debug_info["satisfies_restrictions"] = False
             else:
                 dish_debug_info["restriction_checks"].append({
-                    "restriction": next((choice['text'] for choice in question_choices if choice['feature_id'] == feature_id), ""),
+                    "restriction": restriction,
                     "feature_value": "NOT FOUND"
                 })
                 dish_debug_info["satisfies_restrictions"] = False
