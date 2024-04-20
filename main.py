@@ -300,41 +300,22 @@ def scoringSystem():
 
 def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features):
     filtered_menu = []
-    debug_info = []
-    
     # Filter dishes based on 'hard' questions matching features
     for dish in full_menu:
         keep_dish = True
-        dish_debug_info = {
-            "dish_id": dish["id"],
-            "dish_name": dish["name"],
-            "required_feature_values": [],
-            "dish_feature_values": [],
-            "keep_dish": True
-        }
-        
         for user_answer in user_input:
             if user_answer['question_type'] == 'hard':
                 question = next((q for q in all_questions if q['id'] == user_answer['question_id']), None)
                 if question:
                     required_feature_values = [choice['text'].lower() for choice in question_choices if choice['text'].lower() in [a.lower() for a in user_answer['answer']]]
-                    dish_debug_info["required_feature_values"] = required_feature_values
-                    
                     # Check if dish has the required feature values
                     dish_feature_values = [f['value'].upper() for f in dish_features if f['dish_id'] == dish['id']]
-                    dish_debug_info["dish_feature_values"] = dish_feature_values
-                    
                     if not all(value.upper() in dish_feature_values for value in required_feature_values):
                         keep_dish = False
-                        dish_debug_info["keep_dish"] = False
                         break
-        
-        debug_info.append(dish_debug_info)
-        
         if keep_dish:
             filtered_menu.append(dish)
-    
-    return filtered_menu, debug_info
+    return filtered_menu
 
 def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
     scored_dishes = []
