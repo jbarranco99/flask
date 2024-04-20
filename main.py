@@ -269,8 +269,6 @@ def find_items(current_section):
     return None
 
 
-VERSION = "1.0.4"
-
 @app.route('/scoringSystem', methods=['POST'])
 def scoringSystem():
     data = request.get_json()
@@ -283,7 +281,11 @@ def scoringSystem():
     filtered_menu = filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features)
     scored_dishes = calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions)
 
-    return jsonify(scored_dishes)
+    response = {
+        "version": "1.0.4",
+        "dishes": scored_dishes
+    }
+    return jsonify(response)
 
 def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features):
     filtered_menu = []
@@ -295,15 +297,13 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
             if user_answer['question_type'] == 'hard':
                 question = next((q for q in all_questions if q['id'] == user_answer['question_id']), None)
                 if question:
-                    # Collect all feature_ids that match user answers (case insensitive)
                     feature_ids = [choice['feature_id'] for choice in question_choices if choice['question_id'] == question['id'] and any(choice['text'].lower() == a.lower() for a in user_answer['answer'])]
 
-                    # Check if dish has all the features specified in user_answers as "TRUE"
-                    for feature_id in feature_ids:
-                        feature_entry = next((f for f in dish_features if f['dish_id'] == dish['id'] and f['id'] == feature_id), None)
-                        if not feature_entry or feature_entry['value'].lower() != 'true':
-                            keep_dish = False
-                            break
+                    # Check if dish has all the required features set to "TRUE"
+                    required_features = [f for f in dish_features if f['dish_id'] == dish['id'] and f['id'] in feature_ids]
+                    if not all(f['value'].lower() == 'true' for f in required_features):
+                        keep_dish = False
+                        break
             if not keep_dish:
                 break
 
@@ -343,6 +343,7 @@ def convert_value(value):
         return int(value)
     except ValueError:
         return 0  # Default to 0 if conversion fails
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)
