@@ -269,7 +269,7 @@ def find_items(current_section):
     return None
 
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 
 @app.route('/scoringSystem', methods=['POST'])
 def scoringSystem():
@@ -310,9 +310,9 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
                 if question:
                     required_feature_values = [choice['text'].lower() for choice in question_choices if choice['text'].lower() in [a.lower() for a in user_answer['answer']]]
 
-                    # Check if dish has the required feature values
+                    # Check if dish has all the required feature values
                     dish_feature_values = [f['value'].lower() for f in dish_features if f['dish_id'] == dish['id']]
-                    if not all(value in dish_feature_values for value in required_feature_values):
+                    if not all(value in dish_feature_values for value in ['true'] if value in required_feature_values else []):
                         keep_dish = False
                         break
 
