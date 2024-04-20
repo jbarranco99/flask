@@ -269,7 +269,7 @@ def find_items(current_section):
     return None
 
 
-VERSION = "1.0.6"
+VERSION = "1.0.7"
 
 @app.route('/scoringSystem', methods=['POST'])
 def scoringSystem():
@@ -323,7 +323,8 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
 
         # Check if the dish satisfies all dietary restrictions
         for restriction in dietary_restrictions:
-            if not any(feature['feature'].lower() == restriction and feature['value'].lower() == 'true' for feature in dish_features_filtered):
+            restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower() == restriction), None)
+            if not restriction_feature or restriction_feature['value'].lower() != 'true':
                 dish_debug_info["satisfies_restrictions"] = False
                 break
 
