@@ -269,9 +269,14 @@ def find_items(current_section):
     return None
 
 
+VERSION = "1.0.0"
+
 @app.route('/scoringSystem', methods=['POST'])
 def scoringSystem():
     data = request.get_json()
+    print("Input Data:")
+    print(data)
+
     full_menu = data.get('fullMenu', [])
     user_input = data.get('userInput', [])
     all_questions = data.get('allQuestions', [])
@@ -281,10 +286,18 @@ def scoringSystem():
     filtered_menu = filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features)
     scored_dishes = calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions)
 
-    return jsonify(scored_dishes)
+    response = {
+        "version": VERSION,
+        "dishes": scored_dishes
+    }
+
+    return jsonify(response)
 
 def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features):
     filtered_menu = []
+
+    print("Full Menu:")
+    print(full_menu)
 
     # Filter dishes based on 'hard' questions matching features
     for dish in full_menu:
@@ -294,20 +307,31 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
                 question = next((q for q in all_questions if q['id'] == user_answer['question_id']), None)
                 if question:
                     required_feature_values = [choice['text'].lower() for choice in question_choices if choice['text'].lower() in [a.lower() for a in user_answer['answer']]]
+                    print(f"Required Feature Values for Dish '{dish['name']}': {required_feature_values}")
 
                     # Check if dish has the required feature values
                     dish_feature_values = [f['value'].lower() for f in dish_features if f['dish_id'] == dish['id']]
+                    print(f"Dish '{dish['name']}' Feature Values: {dish_feature_values}")
                     if not all(value in dish_feature_values for value in required_feature_values):
                         keep_dish = False
                         break
 
         if keep_dish:
             filtered_menu.append(dish)
+            print(f"Dish '{dish['name']}' added to Filtered Menu")
+        else:
+            print(f"Dish '{dish['name']}' excluded from Filtered Menu")
+
+    print("Filtered Menu:")
+    print(filtered_menu)
 
     return filtered_menu
 
 def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
     scored_dishes = []
+
+    print("Filtered Menu:")
+    print(filtered_menu)
 
     for dish in filtered_menu:
         dish_score = 0
@@ -318,6 +342,9 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                     choice_ids = [c['id'] for c in question_choices if c['question_id'] == question['id']]
                     user_answer_values = [int(a) for a in user_answer['answer']]
                     dish_feature_values = [convert_value(f['value']) for f in dish_features if f['id'] in choice_ids and f['dish_id'] == dish['id']]
+
+                    print(f"Dish '{dish['name']}' User Answer Values: {user_answer_values}")
+                    print(f"Dish '{dish['name']}' Feature Values: {dish_feature_values}")
 
                     # Pad the shorter list with zeros
                     max_length = max(len(user_answer_values), len(dish_feature_values))
@@ -330,6 +357,10 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
         scored_dish = dish.copy()
         scored_dish['score'] = dish_score
         scored_dishes.append(scored_dish)
+        print(f"Dish '{dish['name']}' Score: {dish_score}")
+
+    print("Scored Dishes:")
+    print(scored_dishes)
 
     return scored_dishes
 
