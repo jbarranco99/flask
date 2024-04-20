@@ -362,23 +362,26 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                     user_answer_values = [int(a) for a in user_answer['answer']]
                     dish_feature_values = []
 
-                    for choice in question_choices:
-                        if choice['question_id'] == question['id']:
-                            feature = next((f for f in dish_features if f['id'] == choice['feature_id'] and f['dish_id'] == dish_id), None)
-                            if feature:
-                                dish_feature_values.append(convert_value(feature['value']))
-                                dish_debug['features'].append({
-                                    'feature_id': feature['id'],
-                                    'feature_name': choice['text'],
-                                    'feature_value': feature['value']
-                                })
-                            else:
-                                dish_feature_values.append(0)
-                                dish_debug['features'].append({
-                                    'feature_id': choice['feature_id'],
-                                    'feature_name': choice['text'],
-                                    'feature_value': 'NOT FOUND'
-                                })
+                    # Get the choice IDs for the current question
+                    choice_ids = [c['id'] for c in question_choices if c['question_id'] == question['id']]
+
+                    # Match the choice IDs with the feature IDs for the current dish
+                    for choice_id in choice_ids:
+                        feature = next((f for f in dish_features if f['id'] == choice_id and f['dish_id'] == dish_id), None)
+                        if feature:
+                            dish_feature_values.append(convert_value(feature['value']))
+                            dish_debug['features'].append({
+                                'feature_id': feature['id'],
+                                'feature_name': next((c['text'] for c in question_choices if c['id'] == choice_id), 'Unknown'),
+                                'feature_value': feature['value']
+                            })
+                        else:
+                            dish_feature_values.append(0)
+                            dish_debug['features'].append({
+                                'feature_id': choice_id,
+                                'feature_name': next((c['text'] for c in question_choices if c['id'] == choice_id), 'Unknown'),
+                                'feature_value': 'NOT FOUND'
+                            })
 
                     # Pad the shorter list with zeros
                     max_length = max(len(user_answer_values), len(dish_feature_values))
