@@ -280,21 +280,11 @@ def scoringSystem():
     dish_features = data.get('dishFeatures', [])
     question_choices = data.get('questionChoices', [])
     
-    filtered_menu, filter_debug_info = filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features)
+    filtered_menu, _ = filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features)
     scored_dishes = calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions)
     
-    debug_info = {
-        "input_data": data,
-        "full_menu": full_menu,
-        "filtered_menu": filtered_menu,
-        "filter_debug_info": filter_debug_info,
-        "scored_dishes": scored_dishes
-    }
-    
     response = {
-        "version": VERSION,
-        "dishes": scored_dishes,
-        "debug_info": debug_info
+        "dishes": scored_dishes
     }
     
     return jsonify(response)
