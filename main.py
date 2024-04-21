@@ -376,39 +376,29 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                 'parsed_answers': user_answer_dict
             })
 
-            # Get choices linked to this particular 'soft' question
-            choices_for_question = [choice for choice in question_choices if choice['question_id'] == question_id]
+            # Get choices linked to this particular 'soft' question and filter by current dish
+            dish_features_list = [f for f in dish_features if f['dish_id'] == dish_id]
 
-            # Iterate over these choices and match them with user answers and dish features
-            for choice in choices_for_question:
-                feature_name = choice['text'].lower()
-                if feature_name in user_answer_dict:
-                    feature_id = choice['feature_id']
-                    feature = next((f for f in dish_features if f['id'] == feature_id and f['dish_id'] == dish_id), None)
+            # Iterate over these filtered features and match them with user answers
+            for feature in dish_features_list:
+                feature_text = feature['feature'].lower()
+                if feature_text in user_answer_dict:
+                    user_value = user_answer_dict[feature_text]
+                    try:
+                        feature_value = int(feature['value'])
+                    except ValueError:
+                        feature_value = 1 if feature['value'].upper() == 'TRUE' else 0
 
-                    if feature:
-                        try:
-                            feature_value = int(feature['value'])
-                        except ValueError:
-                            feature_value = 1 if feature['value'].upper() == 'TRUE' else 0
+                    score_difference = abs(user_value - feature_value)
+                    dish_score += score_difference
 
-                        score_difference = abs(user_answer_dict[feature_name] - feature_value)
-                        dish_score += score_difference
-
-                        dish_debug['features'].append({
-                            'feature_id': feature_id,
-                            'feature_name': feature_name,
-                            'user_value': user_answer_dict[feature_name],
-                            'feature_value': feature['value'],
-                            'score_contribution': score_difference
-                        })
-                    else:
-                        dish_debug['features'].append({
-                            'feature_id': feature_id,
-                            'feature_name': feature_name,
-                            'user_value': user_answer_dict[feature_name],
-                            'feature_value': 'NOT FOUND'
-                        })
+                    dish_debug['features'].append({
+                        'feature_id': feature['id'],
+                        'feature_name': feature['feature'],
+                        'user_value': user_value,
+                        'feature_value': feature['value'],
+                        'score_contribution': score_difference
+                    })
 
         scored_dish = dish.copy()
         scored_dish['score'] = dish_score
