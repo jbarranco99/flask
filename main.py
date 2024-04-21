@@ -293,22 +293,17 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
     filtered_menu = []
     debug_info = []
 
-    # Extract the user's dietary restrictions
-    dietary_restrictions = user_input[0]['answer']
+    # Find all hard questions
+    hard_questions = [q for q in all_questions if q['type'] == 'hard']
 
-    # Find the question ID for the dietary restrictions question
-    dietary_question = next((q for q in all_questions if q['type'] == 'hard'), None)
-    dietary_question_id = dietary_question['id'] if dietary_question else None
-
-    # Filter dishes based on dietary restrictions
+    # Filter dishes based on all hard question restrictions
     for dish in full_menu:
         dish_id = dish['id']
         dish_debug_info = {
             "dish_id": dish_id,
             "dish_name": dish["name"],
-            "dietary_restrictions": dietary_restrictions,
             "dish_features": [],
-            "satisfies_restrictions": True,
+            "satisfies_all_restrictions": True,
             "restriction_checks": []
         }
 
@@ -316,31 +311,39 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
         dish_features_filtered = [feature for feature in dish_features if feature['dish_id'] == dish_id]
         dish_debug_info["dish_features"] = dish_features_filtered
 
-        # Check if the dish satisfies all dietary restrictions
-        for restriction in dietary_restrictions:
-            restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower() == restriction.lower()), None)
+        # Check if the dish satisfies all applicable restrictions from user inputs
+        for question in hard_questions:
+            # Find the user input for this question
+            user_answers = next((input for input in user_input if input['question_id'] == question['id']), None)
+            if not user_answers:
+                continue  # No user input for this question
 
-            if restriction_feature:
-                dish_debug_info["restriction_checks"].append({
-                    "restriction": restriction,
-                    "feature_value": restriction_feature['value']
-                })
+            for answer in user_answers['answer']:
+                # Normalize the answer to match feature names exactly or assume it's boolean 'TRUE'
+                restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower() == answer.lower()), None)
 
-                if restriction_feature['value'].lower() != 'true':
-                    dish_debug_info["satisfies_restrictions"] = False
-            else:
-                dish_debug_info["restriction_checks"].append({
-                    "restriction": restriction,
-                    "feature_value": "NOT FOUND"
-                })
-                dish_debug_info["satisfies_restrictions"] = False
+                if restriction_feature:
+                    dish_debug_info["restriction_checks"].append({
+                        "restriction": answer,
+                        "feature_value": restriction_feature['value']
+                    })
+
+                    if restriction_feature['value'].lower() != 'true':
+                        dish_debug_info["satisfies_all_restrictions"] = False
+                else:
+                    dish_debug_info["restriction_checks"].append({
+                        "restriction": answer,
+                        "feature_value": "NOT FOUND"
+                    })
+                    dish_debug_info["satisfies_all_restrictions"] = False
 
         debug_info.append(dish_debug_info)
 
-        if dish_debug_info["satisfies_restrictions"]:
+        if dish_debug_info["satisfies_all_restrictions"]:
             filtered_menu.append(dish)
 
     return filtered_menu, debug_info
+
 
 def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
     scored_dishes = []
