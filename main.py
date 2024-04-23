@@ -80,7 +80,8 @@ def menuToFullTree():
                 'vegetarian': item['vegetarian'] == 'TRUE',
                 'description': item['description'],
                 'gluten_free': item['gluten_free'] == 'TRUE',
-                'restaurant_id': item['restaurant_id']
+                'restaurant_id': item['restaurant_id'],
+                'score': item['score']
             }
             current_category['items'].append(menu_item)
 
