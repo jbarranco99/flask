@@ -76,10 +76,7 @@ def menuToFullTree():
             menu_item = {
                 'name': item['name'],
                 'price': item['price'],
-                'vegan': item['vegan'] == 'TRUE',
-                'vegetarian': item['vegetarian'] == 'TRUE',
                 'description': item['description'],
-                'gluten_free': item['gluten_free'] == 'TRUE',
                 'restaurant_id': item['restaurant_id'],
                 'score': item['score']
             }
