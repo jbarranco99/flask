@@ -159,7 +159,7 @@ def process_data():
 
     if len(pendingcat1) == len(pending_categories):
         gameStage = "dishPicker"
-        terminal_paths = filter_complete_paths(selection_paths)
+        terminal_paths = filter_complete_paths(selection_paths, userInput)
         # Traverse each path to find and accumulate the corresponding items
         # Assuming 'menu_data' is your complete menu structure
         # and 'terminal_paths' are the paths you've determined to traverse:
