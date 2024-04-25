@@ -199,26 +199,22 @@ def filter_complete_paths(paths):
 def filter_paths_with_all_ancestors(simplified_paths):
     paths_as_tuples_set = set(tuple(path) for path in simplified_paths)
     complete_paths_tuples = [path for path in paths_as_tuples_set if
-                             immediate_ancestor_present(path, paths_as_tuples_set)]
+                             all_ancestors_present(path, paths_as_tuples_set)]
     complete_paths_lists = [list(path) for path in complete_paths_tuples]
-    return ensure_base_paths(complete_paths_lists)
+    return complete_paths_lists
 
+def all_ancestors_present(path, all_paths_set):
+    for i in range(1, len(path)):
+        ancestor = tuple(path[:i])
+        if ancestor not in all_paths_set:
+            return False
+    return True
 
 def immediate_ancestor_present(path, all_paths_set):
     if len(path) == 1:
         return True
     immediate_ancestor = path[:-1]
     return tuple(immediate_ancestor) in all_paths_set
-
-
-def ensure_base_paths(complete_paths_lists):
-    for path in complete_paths_lists:
-        if len(path) > 1:
-            base_path = path[:2]
-            if base_path not in complete_paths_lists:
-                complete_paths_lists.append(base_path)
-    return complete_paths_lists
-
 
 def filter_for_terminal_paths(paths):
     terminal_paths = [path for path in paths if not any(is_prefix(path, other) for other in paths if path != other)]
