@@ -3,39 +3,6 @@ import os
 
 app = Flask(__name__)
 
-
-def get_value(d, path):
-    """Safely get a value from a nested dictionary using a list of keys."""
-    for key in path:
-        try:
-            if isinstance(d, dict):
-                d = d[key]
-            else:
-                d = d[int(key)]
-        except (KeyError, TypeError, ValueError, IndexError):
-            return None
-    return d
-
-
-def find_levels(data, target_values, current_path=None, results=None):
-    """Recursively find and record levels of target values in a nested structure."""
-    if current_path is None:
-        current_path = []
-    if results is None:
-        results = set()
-    if isinstance(data, dict):
-        for key, value in data.items():
-            if key in target_values:
-                results.add(('Key', key, tuple(current_path)))  # Convert path to tuple
-            find_levels(value, target_values, current_path + [key], results)
-    elif isinstance(data, list):
-        for index, item in enumerate(data):
-            if item in target_values:
-                results.add(('Value', item, tuple(current_path + [str(index)])))  # Convert path to tuple
-            find_levels(item, target_values, current_path + [str(index)], results)
-    return list(results)
-
-
 @app.route('/menuToFullTree', methods=['POST'])
 def menuToFullTree():
     try:
@@ -126,11 +93,9 @@ def process_data():
 
         selection_path = ['subcategories', pendingcat1[0]]
         selection_paths.append(selection_path)
-        
+
         pendingcat1.pop(0)
         pendingCategories.extend(answers)
-        
-
 
     else:
         results = find_levels(data, userInput)
@@ -155,9 +120,9 @@ def process_data():
     allowed_values = set(pendingcat1 + answers)
 
     # Update pending_categories to include only allowed values, and add new answers to the start
-    pending_categories = [item for item in answers + pendingcat1]
+    pending_categories = [item for item in answers + pendingcat1 if item in allowed_values]
 
-    if len(pendingcat1) == len(pending_categories):
+    if len(pendingcat1) == 0 and len(pending_categories) == 0:
         gameStage = "dishPicker"
         terminal_paths = filter_complete_paths(selection_paths, userInput)
         # Traverse each path to find and accumulate the corresponding items
@@ -255,6 +220,38 @@ def paths_to_string(paths, delimiter='/'):
     Convert each path in paths to a string using the given delimiter.
     """
     return [delimiter.join(path) for path in paths]
+
+
+def get_value(d, path):
+    """Safely get a value from a nested dictionary using a list of keys."""
+    for key in path:
+        try:
+            if isinstance(d, dict):
+                d = d[key]
+            else:
+                d = d[int(key)]
+        except (KeyError, TypeError, ValueError, IndexError):
+            return None
+    return d
+
+
+def find_levels(data, target_values, current_path=None, results=None):
+    """Recursively find and record levels of target values in a nested structure."""
+    if current_path is None:
+        current_path = []
+    if results is None:
+        results = set()
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if key in target_values:
+                results.add(('Key', key, tuple(current_path)))  # Convert path to tuple
+            find_levels(value, target_values, current_path + [key], results)
+    elif isinstance(data, list):
+        for index, item in enumerate(data):
+            if item in target_values:
+                results.add(('Value', item, tuple(current_path + [str(index)])))  # Convert path to tuple
+            find_levels(item, target_values, current_path + [str(index)], results)
+    return list(results)
 
 
 def find_items(current_section):
