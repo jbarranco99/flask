@@ -188,9 +188,10 @@ def process_data():
     })
 
 
-def filter_complete_paths(paths):
+def filter_complete_paths(paths, user_input):
     simplified_paths = [[item for item in path if item.lower() != "subcategories"] for path in paths]
-    complete_paths = filter_paths_with_all_ancestors(simplified_paths)
+    user_input_paths = [path for path in simplified_paths if all(item in path for item in user_input)]
+    complete_paths = filter_paths_with_all_ancestors(user_input_paths)
     terminal_paths = filter_for_terminal_paths(complete_paths)
 
     return terminal_paths
