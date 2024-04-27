@@ -78,7 +78,8 @@ def menuToFullTree():
                 'price': item['price'],
                 'description': item['description'],
                 'restaurant_id': item['restaurant_id'],
-                'score': item['score']
+                'score': item['score'],
+                'picture': item['picture']
             }
             current_category['items'].append(menu_item)
 
