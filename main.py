@@ -79,7 +79,8 @@ def menuToFullTree():
                 'description': item['description'],
                 'restaurant_id': item['restaurant_id'],
                 'score': item['score'],
-                'picture': item['picture']
+                'picture': item['picture'],
+                'recommend': item['recommend']
             }
             current_category['items'].append(menu_item)
 
