@@ -81,7 +81,7 @@ def menuToFullTree():
                 'score': item['score'],
                 'picture': item['picture'],
                 'recommend': item['recommend'],
-                'id': item['uid']
+                'id': item['id']
             }
             current_category['items'].append(menu_item)
 
