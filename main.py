@@ -423,5 +423,28 @@ def convert_value(value):
         return 0  # Default to 0 if conversion fails
 
 
+@app.route('/recommenderSystem', methods=['POST'])
+def recommenderSystem():
+    data = request.get_json()
+    scored_dishes = data['scoredDishes']
+    historic_shortlist = data['historicShorlist']
+    swiped_left = data['swipedLeft']
+    
+    # Get all the dishes from scoredDishes where recommend = true
+    recommended_dishes = [dish for dish in scored_dishes if dish['recommend']]
+    
+    # Create sets of dish IDs for efficient lookup
+    historic_shortlist_ids = set(dish['id'] for dish in historic_shortlist)
+    swiped_left_ids = set(dish['id'] for dish in swiped_left)
+    
+    # Filter out dishes that are in either swipedLeft or historicShortlist
+    filtered_dishes = [
+        dish for dish in recommended_dishes
+        if dish['id'] not in historic_shortlist_ids and dish['id'] not in swiped_left_ids
+    ]
+    
+    return jsonify(filtered_dishes)
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)
