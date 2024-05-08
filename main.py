@@ -312,22 +312,24 @@ def filter_dishes(full_menu, user_input, all_questions, dish_features):
         dish_features_filtered = [feature for feature in dish_features if feature['dish_id'] == dish_id]
         dish_debug_info["dish_features"] = dish_features_filtered
 
-        # Check if the dish satisfies all applicable restrictions from user inputs
+        # Normalize and check if the dish satisfies all applicable restrictions from user inputs
         for question in hard_questions:
             user_answers = next((input['answer'] for input in user_input if input['question_id'] == question['id']), None)
             if not user_answers:
                 continue  # No user input for this question
 
             for answer in user_answers:
-                restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower() == answer.lower()), None)
+                answer_normalized = answer.lower().strip()
+                restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower().strip() == answer_normalized), None)
 
-                if restriction_feature and restriction_feature['value'].lower() != 'true':
+                if restriction_feature:
                     dish_debug_info["restriction_checks"].append({
                         "restriction": answer,
                         "feature_value": restriction_feature['value']
                     })
-                    dish_debug_info["satisfies_all_restrictions"] = False
-                    break
+                    if restriction_feature['value'].lower() != 'true':
+                        dish_debug_info["satisfies_all_restrictions"] = False
+                        break
                 else:
                     dish_debug_info["restriction_checks"].append({
                         "restriction": answer,
@@ -342,6 +344,7 @@ def filter_dishes(full_menu, user_input, all_questions, dish_features):
             filtered_menu.append(dish)
 
     return filtered_menu, debug_info
+
 
 
 def calculate_scores(filtered_menu, user_input, dish_features, all_questions):
