@@ -35,14 +35,15 @@ def find_levels(data, target_values, current_path=None, results=None):
             find_levels(item, target_values, current_path + [str(index)], results)
     return list(results)
 
+
 @app.route('/menuToFullTree', methods=['POST'])
-def menu_to_full_tree():
+def menuToFullTree():
     try:
         req_data = request.get_json()
         menu_items = req_data['queryMenu']
-        
+
         # Initialize the categories dictionary
-        categories = {"categories": {}}
+        categories = {"categories": {"categories": {}}}
         category_map = {
             "names": [],
             "subcategories": {}
@@ -50,19 +51,16 @@ def menu_to_full_tree():
 
         # Iterate through the menu items and build the categories
         for item in menu_items:
-            current_category = categories["categories"]
+            current_category = categories["categories"]["categories"]
             current_category_map = category_map
-            
             for i in range(1, 6):
                 category = item.get(f'category{i}')
                 if category:
                     if category not in current_category:
-                        current_category[category] = {'items': []}
+                        current_category[category] = {}
                     current_category = current_category[category]
-                    
                     if category not in current_category_map["names"]:
                         current_category_map["names"].append(category)
-                    
                     if category not in current_category_map["subcategories"]:
                         current_category_map["subcategories"][category] = {
                             "names": [],
@@ -72,7 +70,9 @@ def menu_to_full_tree():
                 else:
                     break
 
-            # Add menu item details
+            if 'items' not in current_category:
+                current_category['items'] = []
+
             menu_item = {
                 'name': item['name'],
                 'price': item['price'],
@@ -82,25 +82,26 @@ def menu_to_full_tree():
                 'picture': item['picture'],
                 'recommend': item['recommend'],
                 'id': item['id'],
-                'category1': item.get('category1', ''),
-                'category2': item.get('category2', ''),
-                'category3': item.get('category3', ''),
-                'category4': item.get('category4', ''),
-                'category5': item.get('category5', '')
+                'category1': item['category1'],
+                'category2': item['category2'],
+                'category3': item['category3'],
+                'category4': item['category4'],
+                'category5': item['category5']
             }
             current_category['items'].append(menu_item)
 
-        # Build the response
         response = {
             'fullMap': {
                 'categories': categories["categories"],
                 'categoryMap': category_map
             }
         }
+
         return jsonify(response)
-    except (KeyError, TypeError) as e:
-        # Return error response if there's an issue with input data
-        return jsonify({'error': f'Invalid input data: {str(e)}'}), 400
+
+    except (KeyError, TypeError):
+        return jsonify({'error': 'Invalid input data'}), 400
+
 
 @app.route('/')
 def index():
@@ -269,8 +270,11 @@ def find_items(current_section):
                 return items
     return None
 
+
+VERSION = "1.0.0"
+
 @app.route('/scoringSystem', methods=['POST'])
-def scoring_system():
+def scoringSystem():
     data = request.get_json()
     full_menu = data.get('fullMenu', [])
     user_input = data.get('userInput', [])
@@ -279,7 +283,11 @@ def scoring_system():
     question_choices = data.get('questionChoices', [])
     
     filtered_menu, _ = filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features)
-    response = calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions)
+    scored_dishes = calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions)
+    
+    response = {
+        "dishes": scored_dishes
+    }
     
     return jsonify(response)
 
@@ -287,10 +295,10 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
     filtered_menu = []
     debug_info = []
 
-    # Find all hard and soft questions
-    questions = [q for q in all_questions if q['type'] in ['hard', 'soft']]
+    # Find all hard questions
+    hard_questions = [q for q in all_questions if q['type'] == 'hard']
 
-    # Filter dishes based on all hard and soft question restrictions
+    # Filter dishes based on all hard question restrictions
     for dish in full_menu:
         dish_id = dish['id']
         dish_debug_info = {
@@ -306,27 +314,30 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
         dish_debug_info["dish_features"] = dish_features_filtered
 
         # Check if the dish satisfies all applicable restrictions from user inputs
-        for question in questions:
+        for question in hard_questions:
+            # Find the user input for this question
             user_answers = next((input for input in user_input if input['question_id'] == question['id']), None)
             if not user_answers:
                 continue  # No user input for this question
 
             for answer in user_answers['answer']:
+                # Normalize the answer to match feature names exactly or assume it's boolean 'TRUE'
                 restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower() == answer.lower()), None)
-                if restriction_feature and restriction_feature['value'] is not None:
+
+                if restriction_feature:
                     dish_debug_info["restriction_checks"].append({
                         "restriction": answer,
                         "feature_value": restriction_feature['value']
                     })
-                    if question['type'] == 'hard' and restriction_feature['value'].lower() != 'true':
+
+                    if restriction_feature['value'].lower() != 'true':
                         dish_debug_info["satisfies_all_restrictions"] = False
                 else:
                     dish_debug_info["restriction_checks"].append({
                         "restriction": answer,
-                        "feature_value": "NOT FOUND or NULL"
+                        "feature_value": "NOT FOUND"
                     })
-                    if question['type'] == 'hard':
-                        dish_debug_info["satisfies_all_restrictions"] = False
+                    dish_debug_info["satisfies_all_restrictions"] = False
 
         debug_info.append(dish_debug_info)
 
@@ -334,6 +345,7 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
             filtered_menu.append(dish)
 
     return filtered_menu, debug_info
+
 
 def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
     scored_dishes = []
@@ -345,7 +357,6 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
     for dish in filtered_menu:
         dish_id = dish['id']
         dish_score = 0
-        exclude_dish = False  # Flag to determine if the dish should be excluded
         dish_debug = {
             'dish_id': dish_id,
             'dish_name': dish['name'],
@@ -357,6 +368,8 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
         for soft_question in soft_questions_input:
             question_id = soft_question['question_id']
             user_answers = soft_question['answer']
+
+            # Parse user answers into feature names and their values
             user_answer_dict = {}
             for ans in user_answers:
                 feature_name, value = ans.split(": ")
@@ -368,62 +381,53 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                 'parsed_answers': user_answer_dict
             })
 
-            # Get features linked to this particular 'soft' question and filter by current dish
+            # Get choices linked to this particular 'soft' question and filter by current dish
             dish_features_list = [f for f in dish_features if f['dish_id'] == dish_id]
 
             # Iterate over these filtered features and match them with user answers
             for feature in dish_features_list:
                 feature_text = feature['feature'].lower()
                 if feature_text in user_answer_dict:
-                    feature_value = convert_value(feature['value']) if feature['value'] is not None else None
-
-                    if feature_value is None:
-                        exclude_dish = True  # Exclude dish if the feature is missing
-                        break  # No need to process further features for this dish
-
                     user_value = user_answer_dict[feature_text]
-                    score_difference = abs(user_value - feature_value)
-                    if score_difference > 1:
-                        exclude_dish = True  # Exclude dish if difference is too large
-                        break
+                    try:
+                        feature_value = int(feature['value'])
+                    except ValueError:
+                        feature_value = 1 if feature['value'].upper() == 'TRUE' else 0
 
+                    score_difference = abs(user_value - feature_value)
                     dish_score += score_difference
+
                     dish_debug['features'].append({
                         'feature_id': feature['id'],
                         'feature_name': feature['feature'],
                         'user_value': user_value,
-                        'feature_value': feature_value,
+                        'feature_value': feature['value'],
                         'score_contribution': score_difference
                     })
 
-            if exclude_dish:
-                break  # Stop processing further soft questions for this dish
+        scored_dish = dish.copy()
+        scored_dish['score'] = dish_score
+        scored_dishes.append(scored_dish)
+        debug_info.append(dish_debug)
 
-        if not exclude_dish:
-            scored_dish = dish.copy()
-            scored_dish['score'] = dish_score
-            scored_dishes.append(scored_dish)
-            debug_info.append(dish_debug)
-
-    # Sort the dishes by score in descending order
-    scored_dishes.sort(key=lambda x: x['score'], reverse=True)
     response = {
-        'dishes': {'dishes': scored_dishes},
+        'dishes': scored_dishes,
         'debug_info': debug_info
     }
+
     return response
 
+
 def convert_value(value):
-    if value is None:
-        return None
-    if value.lower() == 'true':
-        return 1
-    elif value.lower() == 'false':
-        return 0
     try:
+        if value.lower() == 'true':
+            return 1
+        elif value.lower() == 'false':
+            return 0
         return int(value)
     except ValueError:
         return 0  # Default to 0 if conversion fails
+
 
 @app.route('/recommenderSystem', methods=['POST'])
 def recommenderSystem():
@@ -446,6 +450,7 @@ def recommenderSystem():
     ]
     
     return jsonify(filtered_dishes)
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)
