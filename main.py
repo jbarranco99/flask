@@ -273,6 +273,10 @@ def find_items(current_section):
 
 VERSION = "1.0.0"
 
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
 @app.route('/scoringSystem', methods=['POST'])
 def scoringSystem():
     data = request.get_json()
@@ -282,11 +286,12 @@ def scoringSystem():
     dish_features = data.get('dishFeatures', [])
     question_choices = data.get('questionChoices', [])
     
-    filtered_menu, _ = filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features)
-    scored_dishes = calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions)
+    filtered_menu, debug_info = filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features)
+    scored_dishes, score_debug_info = calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions)
     
     response = {
-        "dishes": scored_dishes
+        "dishes": scored_dishes,
+        "debug_info": debug_info + score_debug_info  # Optional: combine debug info for full traceability
     }
     
     return jsonify(response)
@@ -315,13 +320,11 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
 
         # Check if the dish satisfies all applicable restrictions from user inputs
         for question in hard_questions:
-            # Find the user input for this question
             user_answers = next((input for input in user_input if input['question_id'] == question['id']), None)
             if not user_answers:
                 continue  # No user input for this question
 
             for answer in user_answers['answer']:
-                # Normalize the answer to match feature names exactly or assume it's boolean 'TRUE'
                 restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower() == answer.lower()), None)
 
                 if restriction_feature:
@@ -346,7 +349,6 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
 
     return filtered_menu, debug_info
 
-
 def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
     scored_dishes = []
     debug_info = []
@@ -361,7 +363,7 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
             'dish_id': dish_id,
             'dish_name': dish['name'],
             'features': [],
-            'processing_steps': []  # To store detailed step-by-step processing info
+            'processing_steps': []
         }
 
         # Process each 'soft' question and calculate scores
@@ -369,7 +371,6 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
             question_id = soft_question['question_id']
             user_answers = soft_question['answer']
 
-            # Parse user answers into feature names and their values
             user_answer_dict = {}
             for ans in user_answers:
                 feature_name, value = ans.split(": ")
@@ -381,10 +382,9 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                 'parsed_answers': user_answer_dict
             })
 
-            # Get choices linked to this particular 'soft' question and filter by current dish
             dish_features_list = [f for f in dish_features if f['dish_id'] == dish_id]
 
-            # Iterate over these filtered features and match them with user answers
+            valid_dish = True
             for feature in dish_features_list:
                 feature_text = feature['feature'].lower()
                 if feature_text in user_answer_dict:
@@ -394,8 +394,12 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                     except ValueError:
                         feature_value = 1 if feature['value'].upper() == 'TRUE' else 0
 
-                    score_difference = abs(user_value - feature_value)
-                    dish_score += score_difference
+                    if feature_value != 0:
+                        score_difference = abs(user_value - feature_value)
+                        if score_difference > 1:
+                            valid_dish = False
+                            break
+                        dish_score += score_difference
 
                     dish_debug['features'].append({
                         'feature_id': feature['id'],
@@ -405,18 +409,14 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                         'score_contribution': score_difference
                     })
 
-        scored_dish = dish.copy()
-        scored_dish['score'] = dish_score
-        scored_dishes.append(scored_dish)
+        if valid_dish:
+            scored_dish = dish.copy()
+            scored_dish['score'] = dish_score
+            scored_dishes.append(scored_dish)
         debug_info.append(dish_debug)
 
-    response = {
-        'dishes': scored_dishes,
-        'debug_info': debug_info
-    }
-
-    return response
-
+    return scored_dishes, debug_info
+    
 
 def convert_value(value):
     try:
