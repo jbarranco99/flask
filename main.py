@@ -35,14 +35,14 @@ def find_levels(data, target_values, current_path=None, results=None):
             find_levels(item, target_values, current_path + [str(index)], results)
     return list(results)
 
-
 @app.route('/menuToFullTree', methods=['POST'])
-def menuToFullTree():
+def menu_to_full_tree():
     try:
-        menu_items = request.get_json()
-
+        req_data = request.get_json()
+        menu_items = req_data['queryMenu']
+        
         # Initialize the categories dictionary
-        categories = {"categories": {"categories": {}}}
+        categories = {"categories": {}}
         category_map = {
             "names": [],
             "subcategories": {}
@@ -50,16 +50,19 @@ def menuToFullTree():
 
         # Iterate through the menu items and build the categories
         for item in menu_items:
-            current_category = categories["categories"]["categories"]
+            current_category = categories["categories"]
             current_category_map = category_map
+            
             for i in range(1, 6):
                 category = item.get(f'category{i}')
                 if category:
                     if category not in current_category:
-                        current_category[category] = {}
+                        current_category[category] = {'items': []}
                     current_category = current_category[category]
+                    
                     if category not in current_category_map["names"]:
                         current_category_map["names"].append(category)
+                    
                     if category not in current_category_map["subcategories"]:
                         current_category_map["subcategories"][category] = {
                             "names": [],
@@ -69,25 +72,25 @@ def menuToFullTree():
                 else:
                     break
 
-            if 'items' not in current_category:
-                current_category['items'] = []
+            # Add menu item details
             menu_item = {
                 'name': item['name'],
                 'price': item['price'],
-                'description': item.get('description', ''),
-                'restaurant_id': item.get('restaurant_id', ''),
-                'score': item.get('score', 0),
-                'picture': item.get('picture', ''),
-                'recommend': item.get('recommend', False),
+                'description': item['description'],
+                'restaurant_id': item['restaurant_id'],
+                'score': item['score'],
+                'picture': item['picture'],
+                'recommend': item['recommend'],
                 'id': item['id'],
-                'category1': item.get('category1'),
-                'category2': item.get('category2'),
-                'category3': item.get('category3'),
-                'category4': item.get('category4'),
-                'category5': item.get('category5')
+                'category1': item.get('category1', ''),
+                'category2': item.get('category2', ''),
+                'category3': item.get('category3', ''),
+                'category4': item.get('category4', ''),
+                'category5': item.get('category5', '')
             }
             current_category['items'].append(menu_item)
 
+        # Build the response
         response = {
             'fullMap': {
                 'categories': categories["categories"],
@@ -95,9 +98,9 @@ def menuToFullTree():
             }
         }
         return jsonify(response)
-    except (KeyError, TypeError):
-        return jsonify({'error': 'Invalid input data'}), 400
-
+    except (KeyError, TypeError) as e:
+        # Return error response if there's an issue with input data
+        return jsonify({'error': f'Invalid input data: {str(e)}'}), 400
 
 @app.route('/')
 def index():
