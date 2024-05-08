@@ -273,10 +273,6 @@ def find_items(current_section):
 
 VERSION = "1.0.0"
 
-from flask import Flask, request, jsonify
-
-app = Flask(__name__)
-
 @app.route('/scoringSystem', methods=['POST'])
 def scoringSystem():
     data = request.get_json()
