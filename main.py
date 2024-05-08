@@ -39,8 +39,7 @@ def find_levels(data, target_values, current_path=None, results=None):
 @app.route('/menuToFullTree', methods=['POST'])
 def menuToFullTree():
     try:
-        req_data = request.get_json()
-        menu_items = req_data['queryMenu']
+        menu_items = request.get_json()
 
         # Initialize the categories dictionary
         categories = {"categories": {"categories": {}}}
@@ -72,21 +71,20 @@ def menuToFullTree():
 
             if 'items' not in current_category:
                 current_category['items'] = []
-
             menu_item = {
                 'name': item['name'],
                 'price': item['price'],
-                'description': item['description'],
-                'restaurant_id': item['restaurant_id'],
-                'score': item['score'],
-                'picture': item['picture'],
-                'recommend': item['recommend'],
+                'description': item.get('description', ''),
+                'restaurant_id': item.get('restaurant_id', ''),
+                'score': item.get('score', 0),
+                'picture': item.get('picture', ''),
+                'recommend': item.get('recommend', False),
                 'id': item['id'],
-                'category1': item['category1'],
-                'category2': item['category2'],
-                'category3': item['category3'],
-                'category4': item['category4'],
-                'category5': item['category5']
+                'category1': item.get('category1'),
+                'category2': item.get('category2'),
+                'category3': item.get('category3'),
+                'category4': item.get('category4'),
+                'category5': item.get('category5')
             }
             current_category['items'].append(menu_item)
 
@@ -96,9 +94,7 @@ def menuToFullTree():
                 'categoryMap': category_map
             }
         }
-
         return jsonify(response)
-
     except (KeyError, TypeError):
         return jsonify({'error': 'Invalid input data'}), 400
 
@@ -435,7 +431,27 @@ def convert_value(value):
     except ValueError:
         return 0  # Default to 0 if conversion fails
 
-
+@app.route('/recommenderSystem', methods=['POST'])
+def recommenderSystem():
+    data = request.get_json()
+    scored_dishes = data['scoredDishes']
+    historic_shortlist = data['historicShorlist']
+    swiped_left = data['swipedLeft']
+    
+    # Get all the dishes from scoredDishes where recommend = true
+    recommended_dishes = [dish for dish in scored_dishes if dish['recommend']]
+    
+    # Create sets of dish IDs for efficient lookup
+    historic_shortlist_ids = set(dish['id'] for dish in historic_shortlist)
+    swiped_left_ids = set(dish['id'] for dish in swiped_left)
+    
+    # Filter out dishes that are in either swipedLeft or historicShortlist
+    filtered_dishes = [
+        dish for dish in recommended_dishes
+        if dish['id'] not in historic_shortlist_ids and dish['id'] not in swiped_left_ids
+    ]
+    
+    return jsonify(filtered_dishes)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)
