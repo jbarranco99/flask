@@ -451,6 +451,159 @@ def recommenderSystem():
     
     return jsonify(filtered_dishes)
 
+# TESTING:
+
+@app.route('/scoringSystem2', methods=['POST'])
+def scoringSystem():
+    data = request.get_json()
+    full_menu = data.get('fullMenu', [])
+    user_input = data.get('userInput', [])
+    all_questions = data.get('allQuestions', [])
+    dish_features = data.get('dishFeatures', [])
+    question_choices = data.get('questionChoices', [])
+    
+    filtered_menu, _ = filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features)
+    response = calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions)
+    
+    return jsonify(response)
+
+def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features):
+    filtered_menu = []
+    debug_info = []
+
+    # Find all hard and soft questions
+    questions = [q for q in all_questions if q['type'] in ['hard', 'soft']]
+
+    # Filter dishes based on all hard and soft question restrictions
+    for dish in full_menu:
+        dish_id = dish['id']
+        dish_debug_info = {
+            "dish_id": dish_id,
+            "dish_name": dish["name"],
+            "dish_features": [],
+            "satisfies_all_restrictions": True,
+            "restriction_checks": []
+        }
+
+        # Get the dish features
+        dish_features_filtered = [feature for feature in dish_features if feature['dish_id'] == dish_id]
+        dish_debug_info["dish_features"] = dish_features_filtered
+
+        # Check if the dish satisfies all applicable restrictions from user inputs
+        for question in questions:
+            # Find the user input for this question
+            user_answers = next((input for input in user_input if input['question_id'] == question['id']), None)
+            if not user_answers:
+                continue  # No user input for this question
+
+            for answer in user_answers['answer']:
+                # Normalize the answer to match feature names exactly or assume it's boolean 'TRUE'
+                restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower() == answer.lower()), None)
+
+                if restriction_feature:
+                    dish_debug_info["restriction_checks"].append({
+                        "restriction": answer,
+                        "feature_value": restriction_feature['value']
+                    })
+
+                    if question['type'] == 'hard' and restriction_feature['value'].lower() != 'true':
+                        dish_debug_info["satisfies_all_restrictions"] = False
+                else:
+                    dish_debug_info["restriction_checks"].append({
+                        "restriction": answer,
+                        "feature_value": "NOT FOUND"
+                    })
+                    if question['type'] == 'hard':
+                        dish_debug_info["satisfies_all_restrictions"] = False
+
+        debug_info.append(dish_debug_info)
+
+        if dish_debug_info["satisfies_all_restrictions"]:
+            filtered_menu.append(dish)
+
+    return filtered_menu, debug_info
+
+
+def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
+    scored_dishes = []
+    debug_info = []
+
+    # Extract only the 'soft' questions from user_input
+    soft_questions_input = [q for q in user_input if q['question_type'] == 'soft']
+
+    for dish in filtered_menu:
+        dish_id = dish['id']
+        dish_score = 0
+        dish_debug = {
+            'dish_id': dish_id,
+            'dish_name': dish['name'],
+            'features': [],
+            'processing_steps': []  # To store detailed step-by-step processing info
+        }
+
+        # Process each 'soft' question and calculate scores
+        for soft_question in soft_questions_input:
+            question_id = soft_question['question_id']
+            user_answers = soft_question['answer']
+
+            # Parse user answers into feature names and their values
+            user_answer_dict = {}
+            for ans in user_answers:
+                feature_name, value = ans.split(": ")
+                user_answer_dict[feature_name.strip().lower()] = int(value.strip())
+
+            dish_debug['processing_steps'].append({
+                'step': 'Parse user answers',
+                'question_id': question_id,
+                'parsed_answers': user_answer_dict
+            })
+
+            # Get choices linked to this particular 'soft' question and filter by current dish
+            dish_features_list = [f for f in dish_features if f['dish_id'] == dish_id]
+
+            # Iterate over these filtered features and match them with user answers
+            for feature in dish_features_list:
+                feature_text = feature['feature'].lower()
+                if feature_text in user_answer_dict:
+                    user_value = user_answer_dict[feature_text]
+                    feature_value = convert_value(feature['value'])
+                    score_difference = abs(user_value - feature_value)
+                    dish_score += score_difference
+
+                    dish_debug['features'].append({
+                        'feature_id': feature['id'],
+                        'feature_name': feature['feature'],
+                        'user_value': user_value,
+                        'feature_value': feature['value'],
+                        'score_contribution': score_difference
+                    })
+
+        if dish_score == 0 or dish_score == len(soft_questions_input):
+            scored_dish = dish.copy()
+            scored_dish['score'] = dish_score
+            scored_dishes.append(scored_dish)
+            debug_info.append(dish_debug)
+
+    # Sort the dishes by score in descending order
+    scored_dishes.sort(key=lambda x: x['score'], reverse=True)
+
+    response = {
+        'dishes': scored_dishes,
+        'debug_info': debug_info
+    }
+
+    return response
+
+
+def convert_value(value):
+    try:
+        if value.lower() == 'true':
+            return 1
+        elif value.lower() == 'false':
+            return 0
+        return int(value)
+    except ValueError:
+        return 0  # Default to 0 if conversion fails
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)
