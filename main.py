@@ -283,11 +283,14 @@ def scoringSystem():
     scored_dishes, score_debug_info = calculate_scores(filtered_menu, user_input, dish_features, all_questions)
     
     response = {
-        "dishes": scored_dishes,
-        "debug_info": debug_info + score_debug_info
+        "dishes": {
+            "dishes": scored_dishes,
+            "debug_info": debug_info + score_debug_info
+        }
     }
     
     return jsonify(response)
+
 
 
 def filter_dishes(full_menu, user_input, all_questions, dish_features):
