@@ -270,88 +270,25 @@ def find_items(current_section):
     return None
 
 
-@app.route('/scoringSystem', methods=['POST'])
-def scoring_system():
-    data = request.get_json()
-    full_menu = data.get('fullMenu', [])
-    user_input = data.get('userInput', [])
-    all_questions = data.get('allQuestions', [])
-    dish_features = data.get('dishFeatures', [])
-    question_choices = data.get('questionChoices', [])
-    
-    filtered_menu, _ = filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features)
-    response = calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions)
-    
-    return jsonify(response)
-
-def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_features):
-    filtered_menu = []
-    debug_info = []
-
-    # Find all hard and soft questions
-    questions = [q for q in all_questions if q['type'] in ['hard', 'soft']]
-
-    # Filter dishes based on all hard and soft question restrictions
-    for dish in full_menu:
-        dish_id = dish['id']
-        dish_debug_info = {
-            "dish_id": dish_id,
-            "dish_name": dish["name"],
-            "dish_features": [],
-            "satisfies_all_restrictions": True,
-            "restriction_checks": []
-        }
-
-        # Get the dish features
-        dish_features_filtered = [feature for feature in dish_features if feature['dish_id'] == dish_id]
-        dish_debug_info["dish_features"] = dish_features_filtered
-
-        # Check if the dish satisfies all applicable restrictions from user inputs
-        for question in questions:
-            user_answers = next((input for input in user_input if input['question_id'] == question['id']), None)
-            if not user_answers:
-                continue  # No user input for this question
-
-            for answer in user_answers['answer']:
-                restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower() == answer.lower()), None)
-                if restriction_feature:
-                    dish_debug_info["restriction_checks"].append({
-                        "restriction": answer,
-                        "feature_value": restriction_feature['value']
-                    })
-                    if question['type'] == 'hard' and restriction_feature['value'].lower() != 'true':
-                        dish_debug_info["satisfies_all_restrictions"] = False
-                else:
-                    dish_debug_info["restriction_checks"].append({
-                        "restriction": answer,
-                        "feature_value": "NOT FOUND"
-                    })
-                    if question['type'] == 'hard':
-                        dish_debug_info["satisfies_all_restrictions"] = False
-
-        debug_info.append(dish_debug_info)
-
-        if dish_debug_info["satisfies_all_restrictions"]:
-            filtered_menu.append(dish)
-
-    return filtered_menu, debug_info
-
 def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
     scored_dishes = []
     debug_info = []
 
+    # Extract only the 'soft' questions from user_input
     soft_questions_input = [q for q in user_input if q['question_type'] == 'soft']
 
     for dish in filtered_menu:
         dish_id = dish['id']
         dish_score = 0
+        exclude_dish = False  # Flag to determine if the dish should be excluded
         dish_debug = {
             'dish_id': dish_id,
             'dish_name': dish['name'],
             'features': [],
-            'processing_steps': []
+            'processing_steps': []  # To store detailed step-by-step processing info
         }
 
+        # Process each 'soft' question and calculate scores
         for soft_question in soft_questions_input:
             question_id = soft_question['question_id']
             user_answers = soft_question['answer']
@@ -366,37 +303,44 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                 'parsed_answers': user_answer_dict
             })
 
+            # Get features linked to this particular 'soft' question and filter by current dish
             dish_features_list = [f for f in dish_features if f['dish_id'] == dish_id]
-            all_scores_valid = True
 
+            # Iterate over these filtered features and match them with user answers
             for feature in dish_features_list:
                 feature_text = feature['feature'].lower()
                 if feature_text in user_answer_dict:
-                    user_value = user_answer_dict[feature_text]
-                    feature_value = convert_value(feature['value'])
-                    score_difference = abs(user_value - feature_value)
-                    if score_difference != 0 and score_difference != 1:
-                        all_scores_valid = False
-                        break
-                    dish_score += score_difference
+                    feature_value = convert_value(feature['value']) if feature['value'] is not None else None
 
+                    if feature_value is None:
+                        exclude_dish = True  # Set the flag to exclude this dish if feature is missing
+                        break  # No need to process further features for this dish
+
+                    user_value = user_answer_dict[feature_text]
+                    score_difference = abs(user_value - feature_value)
+                    if score_difference > 1:
+                        exclude_dish = True  # Set the flag to exclude this dish
+                        break  # No need to process further features for this dish
+
+                    dish_score += score_difference
                     dish_debug['features'].append({
                         'feature_id': feature['id'],
                         'feature_name': feature['feature'],
                         'user_value': user_value,
-                        'feature_value': feature['value'],
+                        'feature_value': feature_value,
                         'score_contribution': score_difference
                     })
 
-            if not all_scores_valid:
-                break
+            if exclude_dish:
+                break  # Stop processing further soft questions for this dish
 
-        if all_scores_valid:
+        if not exclude_dish:
             scored_dish = dish.copy()
             scored_dish['score'] = dish_score
             scored_dishes.append(scored_dish)
             debug_info.append(dish_debug)
 
+    # Sort the dishes by score in descending order
     scored_dishes.sort(key=lambda x: x['score'], reverse=True)
     response = {
         'dishes': {'dishes': scored_dishes},
@@ -405,6 +349,8 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
     return response
 
 def convert_value(value):
+    if value is None:
+        return None
     if value.lower() == 'true':
         return 1
     elif value.lower() == 'false':
@@ -413,6 +359,7 @@ def convert_value(value):
         return int(value)
     except ValueError:
         return 0  # Default to 0 if conversion fails
+
         
 
 @app.route('/recommenderSystem', methods=['POST'])
