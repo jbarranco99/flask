@@ -278,7 +278,6 @@ def scoringSystem():
     user_input = data.get('userInput', [])
     all_questions = data.get('allQuestions', [])
     dish_features = data.get('dishFeatures', [])
-    question_choices = data.get('questionChoices', [])
     
     filtered_menu, debug_info = filter_dishes(full_menu, user_input, all_questions, dish_features)
     scored_dishes, score_debug_info = calculate_scores(filtered_menu, user_input, dish_features, all_questions)
@@ -289,6 +288,7 @@ def scoringSystem():
     }
     
     return jsonify(response)
+
 
 def filter_dishes(full_menu, user_input, all_questions, dish_features):
     filtered_menu = []
@@ -321,22 +321,20 @@ def filter_dishes(full_menu, user_input, all_questions, dish_features):
             for answer in user_answers:
                 restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower() == answer.lower()), None)
 
-                if restriction_feature:
+                if restriction_feature and restriction_feature['value'].lower() != 'true':
                     dish_debug_info["restriction_checks"].append({
                         "restriction": answer,
                         "feature_value": restriction_feature['value']
                     })
-
-                    if restriction_feature['value'].lower() != 'true':
-                        dish_debug_info["satisfies_all_restrictions"] = False
-                        break  # Break out of the loop if a restriction is not satisfied
+                    dish_debug_info["satisfies_all_restrictions"] = False
+                    break
                 else:
                     dish_debug_info["restriction_checks"].append({
                         "restriction": answer,
                         "feature_value": "NOT FOUND"
                     })
                     dish_debug_info["satisfies_all_restrictions"] = False
-                    break  # Break out of the loop if a restriction is not found
+                    break
 
         debug_info.append(dish_debug_info)
 
@@ -344,6 +342,7 @@ def filter_dishes(full_menu, user_input, all_questions, dish_features):
             filtered_menu.append(dish)
 
     return filtered_menu, debug_info
+
 
 def calculate_scores(filtered_menu, user_input, dish_features, all_questions):
     scored_dishes = []
@@ -390,20 +389,11 @@ def calculate_scores(filtered_menu, user_input, dish_features, all_questions):
                     except ValueError:
                         feature_value = 1 if feature['value'].upper() == 'TRUE' else 0
 
-                    if feature_value != 0:
-                        score_difference = abs(user_value - feature_value)
-                        if score_difference > 1:
-                            valid_dish = False
-                            break
-                        dish_score += score_difference
-
-                    dish_debug['features'].append({
-                        'feature_id': feature['id'],
-                        'feature_name': feature['feature'],
-                        'user_value': user_value,
-                        'feature_value': feature['value'],
-                        'score_contribution': score_difference
-                    })
+                    score_difference = abs(user_value - feature_value)
+                    if score_difference > 1:
+                        valid_dish = False
+                        break
+                    dish_score += score_difference
 
             if not valid_dish:
                 break
@@ -415,6 +405,7 @@ def calculate_scores(filtered_menu, user_input, dish_features, all_questions):
         debug_info.append(dish_debug)
 
     return scored_dishes, debug_info
+
 
 def convert_value(value):
     try:
