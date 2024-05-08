@@ -349,7 +349,6 @@ def filter_dishes(full_menu, user_input, all_questions, dish_features):
     return filtered_menu, debug_info
 
 
-
 def calculate_scores(filtered_menu, user_input, dish_features, all_questions):
     scored_dishes = []
     debug_info = []
@@ -410,7 +409,11 @@ def calculate_scores(filtered_menu, user_input, dish_features, all_questions):
             scored_dishes.append(scored_dish)
         debug_info.append(dish_debug)
 
+    # Sort dishes by score in ascending order (lower score is better)
+    scored_dishes.sort(key=lambda dish: dish['score'])
+
     return scored_dishes, debug_info
+
 
 
 def convert_value(value):
