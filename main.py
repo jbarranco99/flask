@@ -271,7 +271,7 @@ def find_items(current_section):
 
 
 @app.route('/scoringSystem', methods=['POST'])
-def scoringSystem():
+def scoring_system():
     data = request.get_json()
     full_menu = data.get('fullMenu', [])
     user_input = data.get('userInput', [])
@@ -308,21 +308,17 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
 
         # Check if the dish satisfies all applicable restrictions from user inputs
         for question in questions:
-            # Find the user input for this question
             user_answers = next((input for input in user_input if input['question_id'] == question['id']), None)
             if not user_answers:
                 continue  # No user input for this question
 
             for answer in user_answers['answer']:
-                # Normalize the answer to match feature names exactly or assume it's boolean 'TRUE'
                 restriction_feature = next((feature for feature in dish_features_filtered if feature['feature'].lower() == answer.lower()), None)
-
                 if restriction_feature:
                     dish_debug_info["restriction_checks"].append({
                         "restriction": answer,
                         "feature_value": restriction_feature['value']
                     })
-
                     if question['type'] == 'hard' and restriction_feature['value'].lower() != 'true':
                         dish_debug_info["satisfies_all_restrictions"] = False
                 else:
@@ -340,12 +336,10 @@ def filter_dishes(full_menu, user_input, all_questions, question_choices, dish_f
 
     return filtered_menu, debug_info
 
-
 def calculate_scores(filtered_menu, user_input, dish_features, question_choices, all_questions):
     scored_dishes = []
     debug_info = []
 
-    # Extract only the 'soft' questions from user_input
     soft_questions_input = [q for q in user_input if q['question_type'] == 'soft']
 
     for dish in filtered_menu:
@@ -355,15 +349,12 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
             'dish_id': dish_id,
             'dish_name': dish['name'],
             'features': [],
-            'processing_steps': []  # To store detailed step-by-step processing info
+            'processing_steps': []
         }
 
-        # Process each 'soft' question and calculate scores
         for soft_question in soft_questions_input:
             question_id = soft_question['question_id']
             user_answers = soft_question['answer']
-
-            # Parse user answers into feature names and their values
             user_answer_dict = {}
             for ans in user_answers:
                 feature_name, value = ans.split(": ")
@@ -375,25 +366,18 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                 'parsed_answers': user_answer_dict
             })
 
-            # Get choices linked to this particular 'soft' question and filter by current dish
             dish_features_list = [f for f in dish_features if f['dish_id'] == dish_id]
-
-            # Flag to track if all feature scores are 0 or 1
             all_scores_valid = True
 
-            # Iterate over these filtered features and match them with user answers
             for feature in dish_features_list:
                 feature_text = feature['feature'].lower()
                 if feature_text in user_answer_dict:
                     user_value = user_answer_dict[feature_text]
                     feature_value = convert_value(feature['value'])
                     score_difference = abs(user_value - feature_value)
-
-                    # Check if the score difference is 0 or 1
                     if score_difference != 0 and score_difference != 1:
                         all_scores_valid = False
                         break
-
                     dish_score += score_difference
 
                     dish_debug['features'].append({
@@ -413,26 +397,23 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
             scored_dishes.append(scored_dish)
             debug_info.append(dish_debug)
 
-    # Sort the dishes by score in descending order
     scored_dishes.sort(key=lambda x: x['score'], reverse=True)
-
     response = {
-        'dishes': scored_dishes,
+        'dishes': {'dishes': scored_dishes},
         'debug_info': debug_info
     }
-
     return response
 
-
 def convert_value(value):
+    if value.lower() == 'true':
+        return 1
+    elif value.lower() == 'false':
+        return 0
     try:
-        if value.lower() == 'true':
-            return 1
-        elif value.lower() == 'false':
-            return 0
         return int(value)
     except ValueError:
         return 0  # Default to 0 if conversion fails
+        
 
 @app.route('/recommenderSystem', methods=['POST'])
 def recommenderSystem():
