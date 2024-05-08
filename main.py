@@ -271,8 +271,6 @@ def find_items(current_section):
     return None
 
 
-VERSION = "1.0.0"
-
 @app.route('/scoringSystem', methods=['POST'])
 def scoringSystem():
     data = request.get_json()
@@ -365,6 +363,7 @@ def calculate_scores(filtered_menu, user_input, dish_features, all_questions):
         }
 
         # Process each 'soft' question and calculate scores
+        valid_dish = True
         for soft_question in soft_questions_input:
             question_id = soft_question['question_id']
             user_answers = soft_question['answer']
@@ -382,7 +381,6 @@ def calculate_scores(filtered_menu, user_input, dish_features, all_questions):
 
             dish_features_list = [f for f in dish_features if f['dish_id'] == dish_id]
 
-            valid_dish = True
             for feature in dish_features_list:
                 feature_text = feature['feature'].lower()
                 if feature_text in user_answer_dict:
@@ -406,6 +404,9 @@ def calculate_scores(filtered_menu, user_input, dish_features, all_questions):
                         'feature_value': feature['value'],
                         'score_contribution': score_difference
                     })
+
+            if not valid_dish:
+                break
 
         if valid_dish:
             scored_dish = dish.copy()
