@@ -379,6 +379,9 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
             # Get choices linked to this particular 'soft' question and filter by current dish
             dish_features_list = [f for f in dish_features if f['dish_id'] == dish_id]
 
+            # Flag to track if all feature scores are 0 or 1
+            all_scores_valid = True
+
             # Iterate over these filtered features and match them with user answers
             for feature in dish_features_list:
                 feature_text = feature['feature'].lower()
@@ -386,6 +389,12 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                     user_value = user_answer_dict[feature_text]
                     feature_value = convert_value(feature['value'])
                     score_difference = abs(user_value - feature_value)
+
+                    # Check if the score difference is 0 or 1
+                    if score_difference != 0 and score_difference != 1:
+                        all_scores_valid = False
+                        break
+
                     dish_score += score_difference
 
                     dish_debug['features'].append({
@@ -396,7 +405,10 @@ def calculate_scores(filtered_menu, user_input, dish_features, question_choices,
                         'score_contribution': score_difference
                     })
 
-        if dish_score == 0 or dish_score == len(soft_questions_input):
+            if not all_scores_valid:
+                break
+
+        if all_scores_valid:
             scored_dish = dish.copy()
             scored_dish['score'] = dish_score
             scored_dishes.append(scored_dish)
