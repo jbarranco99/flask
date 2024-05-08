@@ -280,6 +280,7 @@ def scoringSystem():
     user_input = data.get('userInput', [])
     all_questions = data.get('allQuestions', [])
     dish_features = data.get('dishFeatures', [])
+    question_choices = data.get('questionChoices', [])
     
     filtered_menu, debug_info = filter_dishes(full_menu, user_input, all_questions, dish_features)
     scored_dishes, score_debug_info = calculate_scores(filtered_menu, user_input, dish_features, all_questions)
